@@ -16,7 +16,7 @@ type CogSpec struct {
 	Resource []string `json:"resource,omitempty"`
 	// Helm charts to render
 	Helm []HelmChart `json:"helm,omitempty"`
-	// Kustomize patches to apply
+	// Specify any kustomization patches or transformers
 	Kustomize kustomize_types.Kustomization `json:"kustomize,omitempty"`
 }
 
