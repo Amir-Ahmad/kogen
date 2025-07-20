@@ -1,21 +1,21 @@
 package v1alpha1
 
 import (
-	"github.com/amir-ahmad/kogen/internal/registry"
-	"github.com/amir-ahmad/kogen/internal/store"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"iter"
+
+	"github.com/amir-ahmad/kogen/internal/generator"
 )
 
 type CogGenerator struct{}
 
-// Compile time check to ensure CogGenerator implements registry.Generator.
-var _ registry.Generator = (*CogGenerator)(nil)
+// Compile time check to ensure CogGenerator implements generator.Generator.
+var _ generator.Generator = (*CogGenerator)(nil)
 
-func NewGenerator(manifest unstructured.Unstructured) (registry.Generator, error) {
+func NewGenerator(manifest generator.Manifest) (generator.Generator, error) {
 	return &CogGenerator{}, nil
 }
 
-// Generate implements registry.Generator.
-func (g *CogGenerator) Generate() (store.Store, error) {
-	return store.NewObjectStore(), nil
+// Generate implements generator.Generator.
+func (g *CogGenerator) Generate() (iter.Seq2[generator.Object, error], error) {
+	return nil, nil
 }

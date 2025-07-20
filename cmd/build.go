@@ -2,13 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os"
-	"strings"
 
 	"github.com/amir-ahmad/kogen/internal/build"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/util/yaml"
+	"github.com/amir-ahmad/kogen/internal/generator"
 
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/cuecontext"
@@ -17,7 +14,7 @@ import (
 
 type BuildCmd struct {
 	Chdir   string   `short:"c" help:"Change directory before running"`
-	Path    string   `short:"p" help:"Path to read manifests from. Specify '-' to read yaml from stdin." required:""`
+	Path    string   `short:"p" help:"Cue path to read manifests from" required:""`
 	Tag     []string `short:"t" help:"Tags to pass to Cue"`
 	Package string   `help:"Package to load in Cue"`
 }
@@ -34,98 +31,54 @@ func (b *BuildCmd) Run() error {
 		return err
 	}
 
-	for _, manifest := range manifests {
-		fmt.Println("parsed a manifest")
-		fmt.Printf("%+v\n", manifest)
-		fmt.Printf("kind: %s\n", manifest.GetKind())
-		fmt.Printf("apiVersion: %s\n", manifest.GetAPIVersion())
-		fmt.Printf("gvk: %s\n", manifest.GroupVersionKind())
-	}
 	return build.Generate(os.Stdout, manifests)
 }
 
-func (b *BuildCmd) readManifests(path string) ([]unstructured.Unstructured, error) {
-	if path == "-" {
-		return readYamlManifests(os.Stdin)
-	}
-
-	if strings.HasSuffix(strings.ToLower(path), ".yaml") || strings.HasSuffix(strings.ToLower(path), ".yml") {
-		f, err := os.Open(path)
-		if err != nil {
-			return nil, fmt.Errorf("failed to open file: %w", err)
-		}
-		return readYamlManifests(f)
-	}
-
-	return b.readCueManifests(path)
-}
-
-func readYamlManifests(r io.Reader) ([]unstructured.Unstructured, error) {
-	decoder := yaml.NewYAMLToJSONDecoder(r)
-	var manifests []unstructured.Unstructured
-	for {
-		var manifest unstructured.Unstructured
-		if err := decoder.Decode(&manifest); err != nil {
-			if err == io.EOF {
-				break
-			}
-			return nil, err
-		}
-		manifests = append(manifests, manifest)
-	}
-	return manifests, nil
-}
-
-func (b *BuildCmd) readCueManifests(path string) ([]unstructured.Unstructured, error) {
+func (b *BuildCmd) readManifests(loadPath string) ([]generator.Manifest, error) {
 	ctx := cuecontext.New()
 	cfg := load.Config{Tags: b.Tag}
 	if b.Package != "" {
 		cfg.Package = b.Package
 	}
 
-	manifests := []unstructured.Unstructured{}
+	manifests := []generator.Manifest{}
 
-	insts := load.Instances([]string{path}, &cfg)
+	insts := load.Instances([]string{loadPath}, &cfg)
 	for _, inst := range insts {
 		if inst.Err != nil {
 			return nil, fmt.Errorf("error when loading cue instance: %w", inst.Err)
 		}
 
-		v := ctx.BuildInstance(inst)
-		if v.Err() != nil {
-			return nil, fmt.Errorf("failed to build cue instance: %w", v.Err())
+		instanceValue := ctx.BuildInstance(inst)
+		if err := instanceValue.Err(); err != nil {
+			return nil, fmt.Errorf("failed to build cue instance: %w", err)
 		}
 
-		cogValue := v.LookupPath(cue.ParsePath("cog"))
-		if cogValue.Exists() {
-			if cogValue.Err() != nil {
-				return nil, fmt.Errorf("failed to parse cog: %w", cogValue.Err())
+		kogenValue := instanceValue.LookupPath(cue.ParsePath("kogen"))
+		if err := kogenValue.Err(); err != nil {
+			return nil, fmt.Errorf("couldn't find manifests: %w", err)
+		}
+
+		iter, err := kogenValue.Fields()
+		if err != nil {
+			return nil, fmt.Errorf("failed to iterate manifests: %w", err)
+		}
+
+		for iter.Next() {
+			label := iter.Selector()
+			v := iter.Value()
+			if err := v.Err(); err != nil {
+				return nil, fmt.Errorf("error getting cue value for %s: %w", label, err)
 			}
 
-			var manifest unstructured.Unstructured
-			if err := cogValue.Decode(&manifest); err != nil {
-				return nil, fmt.Errorf("failed to decode cog: %w", err)
+			var manifest generator.Manifest
+
+			if err := v.Decode(&manifest); err != nil {
+				return nil, fmt.Errorf("failed to decode manifest for %s: %w", label, err)
 			}
 
 			manifests = append(manifests, manifest)
 		}
-
-		cogsValue := v.LookupPath(cue.ParsePath("cogList"))
-		if cogsValue.Exists() {
-			if cogsValue.Err() != nil {
-				return nil, fmt.Errorf("failed to parse cogList: %w", cogsValue.Err())
-			}
-
-			var cogs []unstructured.Unstructured
-			if err := cogsValue.Decode(&cogs); err != nil {
-				return nil, fmt.Errorf("failed to decode cogList: %w", err)
-			}
-
-			manifests = append(manifests, cogs...)
-		}
-
-		fmt.Printf("loaded instance: %v\n", inst)
-		fmt.Printf("val: %+v\n", v)
 	}
 	return manifests, nil
 }

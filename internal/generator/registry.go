@@ -1,22 +1,27 @@
-package registry
+package generator
 
 import (
 	"fmt"
+	"io"
+	"iter"
 	"sync"
 
-	"github.com/amir-ahmad/kogen/internal/store"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-type InitGenerator = func(manifest unstructured.Unstructured) (Generator, error)
+type InitGenerator = func(manifest Manifest) (Generator, error)
 
 type Generator interface {
-	Generate() (store.Store, error)
+	Generate() (iter.Seq2[Object, error], error)
+}
+
+type Object interface {
+	GetKind() string
+	Output(w io.Writer) error
 }
 
 var (
-	mu         sync.Mutex
+	mu         sync.RWMutex
 	generators = map[schema.GroupVersionKind]InitGenerator{}
 )
 
@@ -31,7 +36,7 @@ func Register(gvk schema.GroupVersionKind, g InitGenerator) {
 }
 
 // GetGenerator returns the generator for a specific GVK.
-func GetGenerator(manifest unstructured.Unstructured) (Generator, error) {
+func GetGenerator(manifest Manifest) (Generator, error) {
 	gvk := manifest.GroupVersionKind()
 	initFunc, ok := generators[gvk]
 	if !ok {
