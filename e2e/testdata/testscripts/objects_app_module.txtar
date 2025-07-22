@@ -1,0 +1,179 @@
+# test kogen with my app module - https://github.com/Amir-Ahmad/cue-k8s-modules/tree/main/app
+kogen build -p ./...
+cmp stdout golden.yaml
+
+-- cue.mod/module.cue --
+module: "kogen.internal@v0"
+language: version: "v0.12.0"
+source: kind: "git"
+deps: {
+	"github.com/amir-ahmad/cue-k8s-modules/app@v0": {
+		v:       "v0.1.1"
+		default: true
+	}
+	"github.com/amir-ahmad/cue-k8s-modules/k8s-schema@v0": {
+		v:       "v0.1.0"
+		default: true
+	}
+}
+
+-- app.cue --
+package kube
+
+import (
+	pkg_app "github.com/amir-ahmad/cue-k8s-modules/app"
+)
+
+app: [Name=string]: pkg_app.#AppConfig & {
+	name: string | *Name
+	// set some defaults that are specific to me - default 1 replica
+	controller: [string]: X={
+		if X.type == "Deployment" || X.type == "StatefulSet" {
+			spec: replicas: int | *1
+		}
+	}
+}
+
+kogen: [string]: {
+	apiVersion: string
+	kind: string
+	spec: {...}
+}
+
+for k, v in app {
+	kogen: "\(k)": {
+		apiVersion: "kogen.internal/v1alpha1"
+		kind: "Objects"
+		spec: objects: 	(pkg_app.#App & {config: v}).outObjects
+	}
+}
+
+-- apps/foo.cue --
+package kube
+
+app: foo: {
+	common: namespace: "default"
+
+	controller: foo: {
+		type: "Deployment"
+		pod: image: "foo:latest"
+		pod: ports: http: port: 8080
+	}
+}
+
+-- apps/bar.cue --
+package kube
+
+app: bar: {
+	common: namespace: "default"
+
+	controller: bar: {
+		type: "StatefulSet"
+		pod: image: "bar:latest"
+		pod: ports: http: port: 8090
+	}
+}
+
+
+-- golden.yaml --
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: bar
+  namespace: default
+  labels:
+    app.kubernetes.io/name: bar
+    app.kubernetes.io/component: bar
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bar
+      app.kubernetes.io/component: bar
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bar
+        app.kubernetes.io/component: bar
+      annotations: {}
+    spec:
+      containers:
+        - name: bar
+          image: bar:latest
+          ports:
+            - name: http
+              containerPort: 8090
+              protocol: TCP
+          env: []
+          imagePullPolicy: Always
+  serviceName: bar
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bar
+  namespace: default
+  labels:
+    app.kubernetes.io/name: bar
+    app.kubernetes.io/component: bar
+spec:
+  ports:
+    - name: http
+      port: 8090
+      protocol: TCP
+      targetPort: 8090
+  selector:
+    app.kubernetes.io/name: bar
+    app.kubernetes.io/component: bar
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: foo
+  namespace: default
+  labels:
+    app.kubernetes.io/name: foo
+    app.kubernetes.io/component: foo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: foo
+      app.kubernetes.io/component: foo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: foo
+        app.kubernetes.io/component: foo
+      annotations: {}
+    spec:
+      containers:
+        - name: foo
+          image: foo:latest
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env: []
+          imagePullPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foo
+  namespace: default
+  labels:
+    app.kubernetes.io/name: foo
+    app.kubernetes.io/component: foo
+spec:
+  ports:
+    - name: http
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: foo
+    app.kubernetes.io/component: foo
+  type: ClusterIP
+---
