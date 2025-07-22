@@ -1,0 +1,11 @@
+kogen build -p kogen.cue
+stdout ''
+
+-- kogen.cue --
+package kube
+
+kogen: empty: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: objects: []
+}

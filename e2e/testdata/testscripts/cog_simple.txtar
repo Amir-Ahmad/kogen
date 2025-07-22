@@ -1,0 +1,13 @@
+# Not implemented yet
+! kogen build -p kogen.cue
+
+-- kogen.cue --
+package kube
+
+kogen: nginx: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Cog"
+    spec: {
+        resource: ["https://raw.githubusercontent.com/kubernetes/examples/master/guestbook/frontend-service.yaml"]
+    }
+}

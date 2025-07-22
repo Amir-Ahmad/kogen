@@ -1,0 +1,100 @@
+kogen build -p ./...
+cmp stdout golden.yaml
+
+-- frontend.cue --
+package kube
+
+kogen: frontend: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: objects: [
+        {
+            apiVersion: "v1"
+            kind: "Service"
+            metadata: {
+                name: "frontend-service"
+                namespace: "web"
+            }
+            spec: {
+                selector: app: "frontend"
+                ports: [{
+                    port: 80
+                    targetPort: 8080
+                }]
+                type: "ClusterIP"
+            }
+        }
+    ]
+}
+
+-- backend.cue --
+package kube
+
+kogen: backend: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: objects: [
+        {
+            apiVersion: "apps/v1"
+            kind: "StatefulSet"
+            metadata: {
+                name: "database"
+                namespace: "data"
+            }
+            spec: {
+                serviceName: "database-service"
+                replicas: 1
+                selector: matchLabels: app: "database"
+                template: {
+                    metadata: labels: app: "database"
+                    spec: containers: [{
+                        name: "postgres"
+                        image: "postgres:13"
+                        env: [{
+                            name: "POSTGRES_PASSWORD"
+                            value: "password"
+                        }]
+                    }]
+                }
+            }
+        }
+    ]
+}
+
+-- golden.yaml --
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: database
+  namespace: data
+spec:
+  serviceName: database-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database
+  template:
+    metadata:
+      labels:
+        app: database
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:13
+          env:
+            - name: POSTGRES_PASSWORD
+              value: password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: web
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP
+---
