@@ -5,7 +5,8 @@ import (
 )
 
 type Cli struct {
-	Build BuildCmd `cmd:"" help:"Generate Kubernetes manifests"`
+	Build   BuildCmd   `cmd:"" help:"Generate Kubernetes manifests"`
+	Version VersionCmd `cmd:"" help:"Show version information"`
 }
 
 func Execute() {
