@@ -24,6 +24,13 @@ func TestScripts(t *testing.T) {
 		Dir:   "testdata/testscripts",
 		// Set UPDATE_GOLDEN to 0 to update golden files
 		UpdateScripts: os.Getenv("UPDATE_GOLDEN") == "0",
+		Condition: func(cond string) (bool, error) {
+			// Set RUN_REMOTE to 0 to run remote tests
+			if cond == "remote" {
+				return os.Getenv("RUN_REMOTE") == "0", nil
+			}
+			return false, nil
+		},
 	})
 }
 

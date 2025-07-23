@@ -1,6 +1,6 @@
 # test kogen with my app module - https://github.com/Amir-Ahmad/cue-k8s-modules/tree/main/app
-kogen build -p ./...
-cmp stdout golden.yaml
+[remote] kogen build -p ./...
+[remote] cmp stdout golden.yaml
 
 -- cue.mod/module.cue --
 module: "kogen.internal@v0"
