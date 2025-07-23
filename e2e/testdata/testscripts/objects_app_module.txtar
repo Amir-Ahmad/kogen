@@ -4,11 +4,11 @@
 
 -- cue.mod/module.cue --
 module: "kogen.internal@v0"
-language: version: "v0.12.0"
+language: version: "v0.13.0"
 source: kind: "git"
 deps: {
 	"github.com/amir-ahmad/cue-k8s-modules/app@v0": {
-		v:       "v0.1.1"
+		v:       "v0.1.2"
 		default: true
 	}
 	"github.com/amir-ahmad/cue-k8s-modules/k8s-schema@v0": {
@@ -44,7 +44,7 @@ for k, v in app {
 	kogen: "\(k)": {
 		apiVersion: "kogen.internal/v1alpha1"
 		kind: "Objects"
-		spec: objects: 	(pkg_app.#App & {config: v}).outObjects
+		spec: objects: 	(pkg_app.#App & {config: v}).out
 	}
 }
 
