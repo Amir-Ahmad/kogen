@@ -6,24 +6,36 @@ import (
 	"iter"
 	"sync"
 
+	"cuelang.org/go/cue"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
-
-type InitGenerator = func(manifest Manifest) (Generator, error)
-
-type Generator interface {
-	Generate() (iter.Seq2[Object, error], error)
-}
-
-type Object interface {
-	GetKind() string
-	Output(w io.Writer) error
-}
 
 var (
 	mu         sync.RWMutex
 	generators = map[schema.GroupVersionKind]InitGenerator{}
 )
+
+// InitGenerator is a function to initialize a generator from its manifest.
+type InitGenerator = func(manifest Manifest) (Generator, error)
+
+// All generators must implement this interface.
+type Generator interface {
+	Generate() (iter.Seq2[Object, error], error)
+}
+
+type Object interface {
+	// GetName returns the name of the object.
+	GetKind() string
+	// Output writes the object to the provided writer in yaml format.
+	Output(w io.Writer) error
+}
+
+// Manifest represents the manifest that contains the generator's configuration.
+type Manifest struct {
+	metav1.TypeMeta `json:",inline"`
+	Spec            cue.Value
+}
 
 // Register registers a generator for a specific GVK.
 func Register(gvk schema.GroupVersionKind, g InitGenerator) {
