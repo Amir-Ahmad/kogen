@@ -15,4 +15,3 @@ linters:
     - staticcheck
     - ineffassign
     - unused
-    - revive
