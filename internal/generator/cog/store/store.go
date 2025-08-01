@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"iter"
+	"maps"
+	"slices"
 
 	"github.com/amir-ahmad/kogen/internal/generator"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -67,7 +69,10 @@ func (s *ObjectStore) AddYaml(yamlBytes []byte) error {
 // GetIterator returns an iterator for the objects in the store.
 func (s *ObjectStore) GetIterator() iter.Seq2[generator.Object, error] {
 	return func(yield func(generator.Object, error) bool) {
-		for _, obj := range *s {
+		sortedKeys := slices.Sorted(maps.Keys(*s))
+
+		for _, key := range sortedKeys {
+			obj := (*s)[key]
 			if !yield(obj, nil) {
 				return
 			}
