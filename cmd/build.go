@@ -13,11 +13,11 @@ import (
 )
 
 type BuildCmd struct {
-	Chdir    string   `short:"c" help:"Change directory before running"`
-	Path     string   `short:"p" help:"Cue path to read manifests from" required:""`
-	Tag      []string `short:"t" help:"Tags to pass to Cue"`
-	Package  string   `help:"Package to load in Cue"`
-	CacheDir string   `short:"C" help:"Path to store downloaded artifacts such as helm charts." default:"${cache_dir}"`
+	Chdir    string   `short:"c" help:"Change directory before running" env:"KOGEN_CHDIR,ARGOCD_ENV_CHDIR"`
+	Path     string   `short:"p" help:"Cue path to read manifests from" required:"" env:"KOGEN_PATH,ARGOCD_ENV_PATH"`
+	Tag      []string `short:"t" help:"Tags to pass to Cue" env:"KOGEN_TAG,ARGOCD_ENV_TAG"`
+	Package  string   `help:"Package to load in Cue" env:"KOGEN_PACKAGE,ARGOCD_ENV_PACKAGE"`
+	CacheDir string   `help:"Path to store downloaded artifacts such as helm charts" default:"${cache_dir}" env:"KOGEN_CACHE_DIR"`
 }
 
 func (b *BuildCmd) Run() error {
