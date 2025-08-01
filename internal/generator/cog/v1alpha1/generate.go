@@ -13,7 +13,8 @@ import (
 
 // Generator implements generator.Generator.
 type Generator struct {
-	spec v1alpha1.CogSpec
+	spec        v1alpha1.CogSpec
+	instanceDir string
 }
 
 // Compile time check to ensure Generator implements generator.Generator.
@@ -26,7 +27,8 @@ func NewGenerator(manifest generator.Manifest) (generator.Generator, error) {
 	}
 
 	return &Generator{
-		spec: spec,
+		spec:        spec,
+		instanceDir: manifest.InstanceDir,
 	}, nil
 }
 
@@ -35,7 +37,13 @@ func (g *Generator) Generate(options generator.Options) (iter.Seq2[generator.Obj
 	st := store.NewObjectStore()
 
 	for _, h := range g.spec.Helm {
-		if err := addHelmObjects(st, h, g.spec.HelmOptions, filepath.Join(options.CacheDir, "helm")); err != nil {
+		if err := addHelmObjects(
+			st,
+			h,
+			g.spec.HelmOptions,
+			filepath.Join(options.CacheDir, "helm"),
+			g.instanceDir,
+		); err != nil {
 			return nil, err
 		}
 	}
@@ -47,14 +55,16 @@ func addHelmObjects(
 	st *store.ObjectStore,
 	helmChart v1alpha1.HelmChart,
 	helmOptions v1alpha1.HelmOptions,
-	cacheDir string) error {
+	cacheDir string,
+	instanceDir string,
+) error {
 	chart := helm.Chart{
 		Repository: helmChart.Repository,
 		ChartName:  helmChart.ChartName,
 		Version:    helmChart.Version,
 	}
 
-	chartDir := helmChart.Repository
+	chartDir := filepath.Join(instanceDir, helmChart.Repository)
 	var err error
 	if chart.GetChartType() != helm.ChartTypeLocal {
 		chartDir, err = chart.DownloadChart(cacheDir)

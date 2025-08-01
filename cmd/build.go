@@ -82,6 +82,8 @@ func (b *BuildCmd) readManifests(loadPath string) ([]generator.Manifest, error) 
 				return nil, fmt.Errorf("failed to decode manifest for %s: %w", label, err)
 			}
 
+			manifest.InstanceDir = inst.Dir
+
 			manifests = append(manifests, manifest)
 		}
 	}

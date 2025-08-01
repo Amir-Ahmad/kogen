@@ -1,0 +1,45 @@
+# Test that relative paths work for local helm charts.
+# The chart path is relative to the instance directory, in this case apps/hello.
+kogen build -p ./...
+cmp stdout golden.yaml
+
+-- cue.mod/module.cue --
+module: "kogen.internal@v0"
+language: version: "v0.13.0"
+source: kind: "git"
+
+-- apps/hello/kogen.cue --
+package kube
+
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind:       "Cog"
+
+	spec: helm: [{
+		releaseName: "hello"
+		repository:  "chart/"
+		chartName:   "hello"
+		version:     "0.1.0"
+    }]
+}
+
+-- apps/hello/chart/Chart.yaml --
+apiVersion: v2
+name: hello
+version: 0.1.0
+
+-- apps/hello/chart/templates/configmap.yaml --
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hello-config
+data:
+  hello: world
+
+-- golden.yaml --
+apiVersion: v1
+data:
+  hello: world
+kind: ConfigMap
+metadata:
+  name: hello-config

@@ -42,6 +42,9 @@ type Options struct {
 type Manifest struct {
 	metav1.TypeMeta `json:",inline"`
 	Spec            cue.Value
+
+	// InstanceDir is the directory that the manifest was loaded from.
+	InstanceDir string
 }
 
 // Register registers a generator for a specific GVK.
