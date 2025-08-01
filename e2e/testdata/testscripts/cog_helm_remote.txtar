@@ -100,4 +100,3 @@ spec:
     app.kubernetes.io/instance: hello-world
     app.kubernetes.io/name: hello-world
   type: ClusterIP
----

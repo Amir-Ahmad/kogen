@@ -26,16 +26,22 @@ func Generate(w io.Writer, manifests []generator.Manifest, opts generator.Option
 			return err
 		}
 
+		printSeparator := false
 		for object, err := range it {
 			if err != nil {
 				return err
 			}
 
+			// The separator needs to be printed after every object but the last.
+			if printSeparator {
+				fmt.Fprintf(w, "---\n")
+			} else {
+				printSeparator = true
+			}
+
 			if err := object.Output(w); err != nil {
 				return err
 			}
-
-			fmt.Fprintf(w, "---\n")
 		}
 	}
 	return nil

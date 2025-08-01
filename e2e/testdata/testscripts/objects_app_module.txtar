@@ -126,7 +126,6 @@ spec:
     app.kubernetes.io/name: bar
     app.kubernetes.io/component: bar
   type: ClusterIP
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -176,4 +175,3 @@ spec:
     app.kubernetes.io/name: foo
     app.kubernetes.io/component: foo
   type: ClusterIP
----
