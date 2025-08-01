@@ -22,10 +22,29 @@ type Chart struct {
 	Version    string
 }
 
+// ChartType represents the type of chart.
+type ChartType string
+
+const (
+	ChartTypeOCI   ChartType = "oci"
+	ChartTypeHTTP  ChartType = "http"
+	ChartTypeLocal ChartType = "local"
+)
+
+func (c Chart) GetChartType() ChartType {
+	if registry.IsOCI(c.Repository) {
+		return ChartTypeOCI
+	}
+	if strings.HasPrefix(c.Repository, "http://") || strings.HasPrefix(c.Repository, "https://") {
+		return ChartTypeHTTP
+	}
+	return ChartTypeLocal
+}
+
 // GetChartURL gets the artifact url of a chart version.
 func (c Chart) GetChartURL(cacheDir string) (string, error) {
 	// If the chart is an OCI chart, return the repository URL directly.
-	if registry.IsOCI(c.Repository) {
+	if c.GetChartType() == ChartTypeOCI {
 		return c.Repository, nil
 	}
 

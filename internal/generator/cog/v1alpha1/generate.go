@@ -54,9 +54,13 @@ func addHelmObjects(
 		Version:    helmChart.Version,
 	}
 
-	chartDir, err := chart.DownloadChart(cacheDir)
-	if err != nil {
-		return fmt.Errorf("when downloading chart: %w", err)
+	chartDir := helmChart.Repository
+	var err error
+	if chart.GetChartType() != helm.ChartTypeLocal {
+		chartDir, err = chart.DownloadChart(cacheDir)
+		if err != nil {
+			return fmt.Errorf("when downloading chart: %w", err)
+		}
 	}
 
 	release := helm.Release{
