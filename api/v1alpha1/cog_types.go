@@ -25,6 +25,7 @@ type HelmChart struct {
 	ReleaseName string `json:"releaseName,omitempty"`
 	Repository  string `json:"repository,omitempty"`
 	ChartName   string `json:"chartName,omitempty"`
+	Namespace   string `json:"namespace,omitempty"`
 	// Chart version
 	Version string                 `json:"version,omitempty"`
 	Values  map[string]interface{} `json:"values,omitempty"`

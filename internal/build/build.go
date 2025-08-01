@@ -15,13 +15,13 @@ func init() {
 	generator.Register(v1alpha1.ObjectsGVK, obj_v1alpha1.NewGenerator)
 }
 
-func Generate(w io.Writer, manifests []generator.Manifest) error {
+func Generate(w io.Writer, manifests []generator.Manifest, opts generator.Options) error {
 	for _, manifest := range manifests {
 		gen, err := generator.GetGenerator(manifest)
 		if err != nil {
 			return err
 		}
-		it, err := gen.Generate()
+		it, err := gen.Generate(opts)
 		if err != nil {
 			return err
 		}

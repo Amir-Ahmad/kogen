@@ -20,7 +20,7 @@ type Release struct {
 }
 
 // Template does the equivalent of a `helm template`
-func (r Release) Template(chartPath string, kubeVersion string) (map[string]string, error) {
+func (r Release) Template(chartPath string) (map[string]string, error) {
 	chart, err := loader.Load(chartPath)
 	if err != nil {
 		return map[string]string{}, fmt.Errorf("loading chart: %w", err)
@@ -30,7 +30,7 @@ func (r Release) Template(chartPath string, kubeVersion string) (map[string]stri
 	capabilities := chartutil.DefaultCapabilities
 
 	if r.KubeVersion != "" {
-		parsedKubeVersion, err := chartutil.ParseKubeVersion(kubeVersion)
+		parsedKubeVersion, err := chartutil.ParseKubeVersion(r.KubeVersion)
 		if err != nil {
 			return map[string]string{}, fmt.Errorf("error parsing kubeVersion: %w", err)
 		}

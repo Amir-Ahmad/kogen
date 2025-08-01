@@ -65,14 +65,14 @@ func (s *ObjectStore) AddYaml(yamlBytes []byte) error {
 }
 
 // GetIterator returns an iterator for the objects in the store.
-func (s *ObjectStore) GetIterator() (iter.Seq2[generator.Object, error], error) {
+func (s *ObjectStore) GetIterator() iter.Seq2[generator.Object, error] {
 	return func(yield func(generator.Object, error) bool) {
 		for _, obj := range *s {
 			if !yield(obj, nil) {
 				return
 			}
 		}
-	}, nil
+	}
 }
 
 // getObjectKey returns a unique key for an object.

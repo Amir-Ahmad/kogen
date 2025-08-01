@@ -1,21 +1,81 @@
 package v1alpha1
 
 import (
+	"fmt"
 	"iter"
+	"path/filepath"
 
+	"github.com/amir-ahmad/kogen/api/v1alpha1"
 	"github.com/amir-ahmad/kogen/internal/generator"
+	"github.com/amir-ahmad/kogen/internal/generator/cog/store"
+	"github.com/amir-ahmad/kogen/internal/helm"
 )
 
-type CogGenerator struct{}
+// Generator implements generator.Generator.
+type Generator struct {
+	spec v1alpha1.CogSpec
+}
 
-// Compile time check to ensure CogGenerator implements generator.Generator.
-var _ generator.Generator = (*CogGenerator)(nil)
+// Compile time check to ensure Generator implements generator.Generator.
+var _ generator.Generator = (*Generator)(nil)
 
 func NewGenerator(manifest generator.Manifest) (generator.Generator, error) {
-	return &CogGenerator{}, nil
+	var spec v1alpha1.CogSpec
+	if err := manifest.Spec.Decode(&spec); err != nil {
+		return nil, fmt.Errorf("when decoding cog spec: %w", err)
+	}
+
+	return &Generator{
+		spec: spec,
+	}, nil
 }
 
 // Generate implements generator.Generator.
-func (g *CogGenerator) Generate() (iter.Seq2[generator.Object, error], error) {
-	return nil, nil
+func (g *Generator) Generate(options generator.Options) (iter.Seq2[generator.Object, error], error) {
+	st := store.NewObjectStore()
+
+	for _, h := range g.spec.Helm {
+		if err := addHelmObjects(st, h, filepath.Join(options.CacheDir, "helm")); err != nil {
+			return nil, err
+		}
+	}
+
+	return st.GetIterator(), nil
+}
+
+func addHelmObjects(
+	st *store.ObjectStore,
+	helmChart v1alpha1.HelmChart,
+	cacheDir string) error {
+	chart := helm.Chart{
+		Repository: helmChart.Repository,
+		ChartName:  helmChart.ChartName,
+		Version:    helmChart.Version,
+	}
+
+	chartDir, err := chart.DownloadChart(cacheDir)
+	if err != nil {
+		return fmt.Errorf("when downloading chart: %w", err)
+	}
+
+	// TODO: set KubeVersion and APIVersions too
+	release := helm.Release{
+		Release:     helmChart.ReleaseName,
+		Namespace:   helmChart.Namespace,
+		IncludeCRDs: helmChart.IncludeCRDs,
+		Values:      helmChart.Values,
+	}
+
+	renderedTemplates, err := release.Template(chartDir)
+	if err != nil {
+		return fmt.Errorf("when rendering helm templates: %w", err)
+	}
+
+	for _, v := range renderedTemplates {
+		if err := st.AddYaml([]byte(v)); err != nil {
+			return fmt.Errorf("when adding helm objects to store: %w", err)
+		}
+	}
+
+	return nil
 }

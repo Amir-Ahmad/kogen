@@ -13,10 +13,11 @@ import (
 )
 
 type BuildCmd struct {
-	Chdir   string   `short:"c" help:"Change directory before running"`
-	Path    string   `short:"p" help:"Cue path to read manifests from" required:""`
-	Tag     []string `short:"t" help:"Tags to pass to Cue"`
-	Package string   `help:"Package to load in Cue"`
+	Chdir    string   `short:"c" help:"Change directory before running"`
+	Path     string   `short:"p" help:"Cue path to read manifests from" required:""`
+	Tag      []string `short:"t" help:"Tags to pass to Cue"`
+	Package  string   `help:"Package to load in Cue"`
+	CacheDir string   `short:"C" help:"Path to store downloaded artifacts such as helm charts." default:"${cache_dir}"`
 }
 
 func (b *BuildCmd) Run() error {
@@ -31,7 +32,11 @@ func (b *BuildCmd) Run() error {
 		return err
 	}
 
-	return build.Generate(os.Stdout, manifests)
+	options := generator.Options{
+		CacheDir: b.CacheDir,
+	}
+
+	return build.Generate(os.Stdout, manifests, options)
 }
 
 func (b *BuildCmd) readManifests(loadPath string) ([]generator.Manifest, error) {

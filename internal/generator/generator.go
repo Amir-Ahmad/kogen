@@ -21,14 +21,21 @@ type InitGenerator = func(manifest Manifest) (Generator, error)
 
 // All generators must implement this interface.
 type Generator interface {
-	Generate() (iter.Seq2[Object, error], error)
+	Generate(options Options) (iter.Seq2[Object, error], error)
 }
 
+// Generators return an iterator of Objects.
 type Object interface {
 	// GetName returns the name of the object.
 	GetKind() string
 	// Output writes the object to the provided writer in yaml format.
 	Output(w io.Writer) error
+}
+
+// Options for generators.
+type Options struct {
+	// CacheDir is the directory to use for downloading artifacts.
+	CacheDir string
 }
 
 // Manifest represents the manifest that contains the generator's configuration.
