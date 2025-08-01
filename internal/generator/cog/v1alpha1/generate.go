@@ -35,7 +35,7 @@ func (g *Generator) Generate(options generator.Options) (iter.Seq2[generator.Obj
 	st := store.NewObjectStore()
 
 	for _, h := range g.spec.Helm {
-		if err := addHelmObjects(st, h, filepath.Join(options.CacheDir, "helm")); err != nil {
+		if err := addHelmObjects(st, h, g.spec.HelmOptions, filepath.Join(options.CacheDir, "helm")); err != nil {
 			return nil, err
 		}
 	}
@@ -46,6 +46,7 @@ func (g *Generator) Generate(options generator.Options) (iter.Seq2[generator.Obj
 func addHelmObjects(
 	st *store.ObjectStore,
 	helmChart v1alpha1.HelmChart,
+	helmOptions v1alpha1.HelmOptions,
 	cacheDir string) error {
 	chart := helm.Chart{
 		Repository: helmChart.Repository,
@@ -58,12 +59,13 @@ func addHelmObjects(
 		return fmt.Errorf("when downloading chart: %w", err)
 	}
 
-	// TODO: set KubeVersion and APIVersions too
 	release := helm.Release{
 		Release:     helmChart.ReleaseName,
 		Namespace:   helmChart.Namespace,
 		IncludeCRDs: helmChart.IncludeCRDs,
 		Values:      helmChart.Values,
+		KubeVersion: helmOptions.KubeVersion,
+		APIVersions: helmOptions.APIVersions,
 	}
 
 	renderedTemplates, err := release.Template(chartDir)

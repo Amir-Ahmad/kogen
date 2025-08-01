@@ -16,6 +16,10 @@ type CogSpec struct {
 	Resource []string `json:"resource,omitempty"`
 	// Helm charts to render
 	Helm []HelmChart `json:"helm,omitempty"`
+
+	// Options specific to helm charts.
+	HelmOptions HelmOptions `json:"helmOptions,omitempty"`
+
 	// Specify any kustomization patches or transformers
 	Kustomize kustomize_types.Kustomization `json:"kustomize,omitempty"`
 }
@@ -31,4 +35,9 @@ type HelmChart struct {
 	Values  map[string]interface{} `json:"values,omitempty"`
 	// equivalent of helm template --include-crds
 	IncludeCRDs bool `json:"includeCRDs,omitempty"`
+}
+
+type HelmOptions struct {
+	KubeVersion string   `json:"kubeVersion,omitempty"`
+	APIVersions []string `json:"apiVersions,omitempty"`
 }
