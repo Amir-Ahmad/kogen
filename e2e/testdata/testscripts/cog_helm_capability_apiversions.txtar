@@ -1,0 +1,65 @@
+kogen build -p no-capability.cue
+stdout ''
+
+kogen build -p with-capability.cue
+cmp stdout golden.yaml
+
+-- no-capability.cue --
+package kube
+
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind:       "Cog"
+
+	spec: helm: [{
+		releaseName: "hello"
+		repository:  "chart/"
+		chartName:   "hello"
+		version:     "0.1.0"
+    }]
+}
+
+-- with-capability.cue --
+package kube
+
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind:       "Cog"
+
+	spec: helm: [{
+		releaseName: "hello"
+		repository:  "chart/"
+		chartName:   "hello"
+		version:     "0.1.0"
+    }]
+	spec: helmOptions: apiVersions: [
+		"networking.k8s.io/v1/NetworkPolicy"
+	]
+}
+
+-- chart/Chart.yaml --
+apiVersion: v2
+name: hello
+version: 0.1.0
+
+-- chart/templates/networkpolicy.yaml --
+{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1/NetworkPolicy" }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hello-netpol
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+{{- end }}
+
+-- golden.yaml --
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hello-netpol
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress

@@ -1,0 +1,114 @@
+kogen build -p kogen.cue
+cmp stdout golden.yaml
+
+-- kogen.cue --
+package kube
+
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind:       "Cog"
+
+	spec: helm: [{
+		releaseName: "multi-template-test"
+		repository:  "chart/"
+		chartName:   "multi-template-test"
+		version:     "0.1.0"
+    }]
+}
+
+-- chart/Chart.yaml --
+apiVersion: v2
+name: multi-template-test
+version: 0.1.0
+
+-- chart/values.yaml --
+app:
+  name: multi-template-app
+  image: nginx:latest
+  replicas: 2
+
+service:
+  port: 80
+  type: ClusterIP
+
+-- chart/templates/configmap.yaml --
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.app.name }}-config
+data:
+  app.properties: |
+    name={{ .Values.app.name }}
+    replicas={{ .Values.app.replicas }}
+
+-- chart/templates/deployment.yaml --
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.name }}
+spec:
+  replicas: {{ .Values.app.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}
+    spec:
+      containers:
+      - name: {{ .Values.app.name }}
+        image: {{ .Values.app.image }}
+
+-- chart/templates/service.yaml --
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.app.name }}-service
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+  - port: {{ .Values.service.port }}
+    targetPort: 80
+  selector:
+    app: {{ .Values.app.name }}
+
+-- golden.yaml --
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multi-template-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: multi-template-app
+  template:
+    metadata:
+      labels:
+        app: multi-template-app
+    spec:
+      containers:
+      - image: nginx:latest
+        name: multi-template-app
+---
+apiVersion: v1
+data:
+  app.properties: |
+    name=multi-template-app
+    replicas=2
+kind: ConfigMap
+metadata:
+  name: multi-template-app-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: multi-template-app-service
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: multi-template-app
+  type: ClusterIP

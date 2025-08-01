@@ -1,0 +1,77 @@
+kogen build -p kogen.cue
+cmp stdout golden.yaml
+
+-- kogen.cue --
+package kube
+
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind:       "Cog"
+
+	spec: helm: [{
+		releaseName: "multi-object-test"
+		repository:  "chart/"
+		chartName:   "multi-object-test"
+		version:     "0.1.0"
+    }]
+}
+
+-- chart/Chart.yaml --
+apiVersion: v2
+name: multi-object-test
+version: 0.1.0
+
+-- chart/values.yaml --
+namespace: default
+app:
+  name: multi-object-app
+
+-- chart/templates/all-resources.yaml --
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespace }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.app.name }}-config
+  namespace: {{ .Values.namespace }}
+data:
+  config.yaml: |
+    app: {{ .Values.app.name }}
+    environment: production
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.app.name }}-secret
+  namespace: {{ .Values.namespace }}
+type: Opaque
+data:
+  password: cGFzc3dvcmQ=
+
+-- golden.yaml --
+apiVersion: v1
+data:
+  config.yaml: |
+    app: multi-object-app
+    environment: production
+kind: ConfigMap
+metadata:
+  name: multi-object-app-config
+  namespace: default
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: default
+---
+apiVersion: v1
+data:
+  password: cGFzc3dvcmQ=
+kind: Secret
+metadata:
+  name: multi-object-app-secret
+  namespace: default
+type: Opaque

@@ -9,16 +9,16 @@ kogen: main: {
 	kind:       "Cog"
 
 	spec: helm: [{
-		releaseName: "hello-world"
+		releaseName: "hello"
 		repository:  "chart/"
-		chartName:   "hello-world"
+		chartName:   "hello"
 		version:     "0.1.0"
     }]
 }
 
 -- chart/Chart.yaml --
 apiVersion: v2
-name: hello-world
+name: hello
 version: 0.1.0
 
 -- chart/templates/configmap.yaml --
