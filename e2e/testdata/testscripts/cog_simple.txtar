@@ -1,5 +1,5 @@
-# Not implemented yet
-! kogen build -p kogen.cue
+[remote] kogen build -p kogen.cue
+[remote] cmp stdout golden.yaml
 
 -- kogen.cue --
 package kube
@@ -11,3 +11,5 @@ kogen: nginx: {
         resource: ["https://raw.githubusercontent.com/kubernetes/examples/master/guestbook/frontend-service.yaml"]
     }
 }
+
+-- golden.yaml --
