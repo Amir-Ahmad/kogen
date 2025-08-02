@@ -1,7 +1,7 @@
-kogen build kogen.cue
+exec kogen build kogen.cue
 cmp stdout golden.yaml
 
-kogen build ./...
+exec kogen build ./...
 cmp stdout golden.yaml
 
 -- kogen.cue --

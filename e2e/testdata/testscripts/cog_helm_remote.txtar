@@ -3,14 +3,14 @@
 env KOGEN_CACHE_DIR=$WORK/cache
 ! exists $WORK/cache/helm/https-helm-github-io-examples-hello-world-0.1.0
 
-kogen build kogen.cue
+exec kogen build kogen.cue
 cmp stdout golden.yaml
 
 # the chart should now be there in the cache directory
 exists $WORK/cache/helm/https-helm-github-io-examples-hello-world-0.1.0
 
 # It should work with the cache there
-kogen build kogen.cue
+exec kogen build kogen.cue
 cmp stdout golden.yaml
 
 -- kogen.cue --

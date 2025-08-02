@@ -1,7 +1,7 @@
 [!remote] skip
 
 # test kogen with my app module - https://github.com/Amir-Ahmad/cue-k8s-modules/tree/main/app
-kogen build ./...
+exec kogen build ./...
 cmp stdout golden.yaml
 
 -- cue.mod/module.cue --

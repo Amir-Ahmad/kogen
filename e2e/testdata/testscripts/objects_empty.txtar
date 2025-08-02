@@ -1,4 +1,4 @@
-kogen build kogen.cue
+exec kogen build kogen.cue
 stdout ''
 
 -- kogen.cue --

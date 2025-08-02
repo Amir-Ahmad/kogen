@@ -1,6 +1,6 @@
 # Test that relative paths work for local helm charts.
 # The chart path is relative to the instance directory, in this case apps/hello.
-kogen build ./...
+exec kogen build ./...
 cmp stdout golden.yaml
 
 -- cue.mod/module.cue --
