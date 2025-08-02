@@ -3,14 +3,14 @@
 env KOGEN_CACHE_DIR=$WORK/cache
 ! exists $WORK/cache/resources/5971672a58edc98e.yaml
 
-kogen build -p kogen.cue
+kogen build kogen.cue
 cmp stdout golden.yaml
 
 # It should be cached now.
 exists $WORK/cache/resources/5971672a58edc98e.yaml
 
 # It should work with the cache there
-kogen build -p kogen.cue
+kogen build kogen.cue
 cmp stdout golden.yaml
 
 -- kogen.cue --

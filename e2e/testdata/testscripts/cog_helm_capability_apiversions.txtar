@@ -1,7 +1,7 @@
-kogen build -p no-capability.cue
+kogen build no-capability.cue
 stdout ''
 
-kogen build -p with-capability.cue
+kogen build with-capability.cue
 cmp stdout golden.yaml
 
 -- no-capability.cue --

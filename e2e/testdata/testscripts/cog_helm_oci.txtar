@@ -3,14 +3,14 @@
 env KOGEN_CACHE_DIR=$WORK/cache
 ! exists $WORK/cache/helm/oci-ghcr-io-prometheus-community-charts-prometheus-node-exporter-prometheus-node-exporter-4.47.3
 
-kogen build -p kogen.cue
+kogen build kogen.cue
 cmp stdout golden.yaml
 
 # the chart should now be there in the cache directory
 exists $WORK/cache/helm/oci-ghcr-io-prometheus-community-charts-prometheus-node-exporter-prometheus-node-exporter-4.47.3
 
 # It should work with the cache there
-kogen build -p kogen.cue
+kogen build kogen.cue
 cmp stdout golden.yaml
 
 -- kogen.cue --
