@@ -1,16 +1,17 @@
-[remote] env KOGEN_CACHE_DIR=$WORK/cache
+[!remote] skip
 
-[remote] ! exists $WORK/cache/helm/https-helm-github-io-examples-hello-world-0.1.0
+env KOGEN_CACHE_DIR=$WORK/cache
+! exists $WORK/cache/helm/https-helm-github-io-examples-hello-world-0.1.0
 
-[remote] kogen build -p kogen.cue
-[remote] cmp stdout golden.yaml
+kogen build -p kogen.cue
+cmp stdout golden.yaml
 
 # the chart should now be there in the cache directory
-[remote] exists $WORK/cache/helm/https-helm-github-io-examples-hello-world-0.1.0
+exists $WORK/cache/helm/https-helm-github-io-examples-hello-world-0.1.0
 
 # It should work with the cache there
-[remote] kogen build -p kogen.cue
-[remote] cmp stdout golden.yaml
+kogen build -p kogen.cue
+cmp stdout golden.yaml
 
 -- kogen.cue --
 package kube

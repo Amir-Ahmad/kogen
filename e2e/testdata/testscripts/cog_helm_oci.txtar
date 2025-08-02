@@ -1,16 +1,17 @@
-[remote] env KOGEN_CACHE_DIR=$WORK/cache
+[!remote] skip
 
-[remote] ! exists $WORK/cache/helm/oci-ghcr-io-prometheus-community-charts-prometheus-node-exporter-prometheus-node-exporter-4.47.3
+env KOGEN_CACHE_DIR=$WORK/cache
+! exists $WORK/cache/helm/oci-ghcr-io-prometheus-community-charts-prometheus-node-exporter-prometheus-node-exporter-4.47.3
 
-[remote] kogen build -p kogen.cue
-[remote] cmp stdout golden.yaml
+kogen build -p kogen.cue
+cmp stdout golden.yaml
 
 # the chart should now be there in the cache directory
-[remote] exists $WORK/cache/helm/oci-ghcr-io-prometheus-community-charts-prometheus-node-exporter-prometheus-node-exporter-4.47.3
+exists $WORK/cache/helm/oci-ghcr-io-prometheus-community-charts-prometheus-node-exporter-prometheus-node-exporter-4.47.3
 
 # It should work with the cache there
-[remote] kogen build -p kogen.cue
-[remote] cmp stdout golden.yaml
+kogen build -p kogen.cue
+cmp stdout golden.yaml
 
 -- kogen.cue --
 package kube

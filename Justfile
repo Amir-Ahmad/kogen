@@ -3,7 +3,7 @@
     just --list
 
 @test:
-    gotestsum -f testname ./... -- -count=1
+    gotestsum --hide-summary=skipped -f testname ./... -- -count=1
 
 @coverage:
     gotestsum -- -cover -coverprofile=c.out -count=1 ./...
