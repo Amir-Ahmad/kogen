@@ -1,0 +1,92 @@
+kogen build -p kogen.cue
+cmp stdout golden.yaml
+
+-- kogen.cue --
+package kube
+
+kogen: app: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Cog"
+    spec: resource: ["manifests/"]
+}
+
+-- manifests/deployment.yaml --
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: web
+        image: nginx:latest
+
+-- manifests/service.yml --
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+spec:
+  selector:
+    app: web
+  ports:
+  - port: 8080
+
+-- manifests/configmap.yaml --
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+data:
+  app.properties: |
+    debug=true
+    port=8080
+
+-- manifests/README.md --
+# This should be ignored by the resource loader
+
+-- golden.yaml --
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - image: nginx:latest
+        name: web
+---
+apiVersion: v1
+data:
+  app.properties: |
+    debug=true
+    port=8080
+kind: ConfigMap
+metadata:
+  name: web-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+spec:
+  ports:
+  - port: 8080
+  selector:
+    app: web

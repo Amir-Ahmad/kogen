@@ -1,0 +1,41 @@
+[!remote] skip
+
+env KOGEN_CACHE_DIR=$WORK/cache
+! exists $WORK/cache/resources/5971672a58edc98e.yaml
+
+kogen build -p kogen.cue
+cmp stdout golden.yaml
+
+# It should be cached now.
+exists $WORK/cache/resources/5971672a58edc98e.yaml
+
+# It should work with the cache there
+kogen build -p kogen.cue
+cmp stdout golden.yaml
+
+-- kogen.cue --
+package kube
+
+kogen: nginx: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Cog"
+    spec: {
+        resource: ["https://raw.githubusercontent.com/kubernetes/examples/master/guestbook/frontend-service.yaml"]
+    }
+}
+
+-- golden.yaml --
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: guestbook
+    tier: frontend
+  name: frontend
+spec:
+  ports:
+  - port: 80
+  selector:
+    app: guestbook
+    tier: frontend
+  type: NodePort
