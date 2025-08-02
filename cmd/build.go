@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/amir-ahmad/kogen/internal/build"
 	"github.com/amir-ahmad/kogen/internal/generator"
@@ -13,11 +14,12 @@ import (
 )
 
 type BuildCmd struct {
-	Chdir    string   `short:"c" help:"Change directory before running" env:"KOGEN_CHDIR,ARGOCD_ENV_CHDIR"`
-	Path     string   `arg:"" name:"path" help:"Cue path to read manifests from" required:"" env:"KOGEN_PATH,ARGOCD_ENV_PATH"`
-	Tag      []string `short:"t" help:"Tags to pass to Cue" env:"KOGEN_TAG,ARGOCD_ENV_TAG"`
-	Package  string   `help:"Package to load in Cue" env:"KOGEN_PACKAGE,ARGOCD_ENV_PACKAGE"`
-	CacheDir string   `help:"Path to store downloaded artifacts such as helm charts" default:"${cache_dir}" env:"KOGEN_CACHE_DIR"`
+	Chdir      string   `short:"c" help:"Change directory before running" env:"KOGEN_CHDIR,ARGOCD_ENV_CHDIR"`
+	Path       string   `arg:"" name:"path" help:"Cue path to read generator config from" required:"" env:"KOGEN_PATH,ARGOCD_ENV_PATH"`
+	Tag        []string `short:"t" help:"Tags to pass to Cue" env:"KOGEN_TAG,ARGOCD_ENV_TAG"`
+	Package    string   `help:"Package to load in Cue" env:"KOGEN_PACKAGE,ARGOCD_ENV_PACKAGE"`
+	CacheDir   string   `help:"Path to store downloaded artifacts such as helm charts" default:"${cache_dir}" env:"KOGEN_CACHE_DIR"`
+	KindFilter string   `short:"k" help:"Regular expression to filter objects by Kind. This is case insensitive and anchored with ^$." env:"KOGEN_KIND_FILTER,ARGOCD_ENV_KIND_FILTER"`
 }
 
 func (b *BuildCmd) Run() error {
@@ -27,26 +29,34 @@ func (b *BuildCmd) Run() error {
 		}
 	}
 
-	manifests, err := b.readManifests(b.Path)
+	genInputs, err := b.readGeneratorConfig(b.Path)
 	if err != nil {
 		return err
 	}
 
-	options := generator.Options{
+	options := build.BuildOptions{
 		CacheDir: b.CacheDir,
 	}
 
-	return build.Generate(os.Stdout, manifests, options)
+	if b.KindFilter != "" {
+		kindFilter, err := regexp.Compile(fmt.Sprintf("(?i)^%s$", b.KindFilter))
+		if err != nil {
+			return fmt.Errorf("failed to compile kind filter: %w", err)
+		}
+		options.KindFilter = kindFilter
+	}
+
+	return build.Run(os.Stdout, genInputs, options)
 }
 
-func (b *BuildCmd) readManifests(loadPath string) ([]generator.Manifest, error) {
+func (b *BuildCmd) readGeneratorConfig(loadPath string) ([]generator.GeneratorInput, error) {
 	ctx := cuecontext.New()
 	cfg := load.Config{Tags: b.Tag}
 	if b.Package != "" {
 		cfg.Package = b.Package
 	}
 
-	manifests := []generator.Manifest{}
+	genInputs := []generator.GeneratorInput{}
 
 	insts := load.Instances([]string{loadPath}, &cfg)
 	for _, inst := range insts {
@@ -61,12 +71,12 @@ func (b *BuildCmd) readManifests(loadPath string) ([]generator.Manifest, error) 
 
 		kogenValue := instanceValue.LookupPath(cue.ParsePath("kogen"))
 		if err := kogenValue.Err(); err != nil {
-			return nil, fmt.Errorf("couldn't find manifests: %w", err)
+			return nil, fmt.Errorf("couldn't find generator config: %w", err)
 		}
 
 		iter, err := kogenValue.Fields()
 		if err != nil {
-			return nil, fmt.Errorf("failed to iterate manifests: %w", err)
+			return nil, fmt.Errorf("failed to iterate generator config: %w", err)
 		}
 
 		for iter.Next() {
@@ -76,16 +86,15 @@ func (b *BuildCmd) readManifests(loadPath string) ([]generator.Manifest, error) 
 				return nil, fmt.Errorf("error getting cue value for %s: %w", label, err)
 			}
 
-			var manifest generator.Manifest
+			var genInput generator.GeneratorInput
 
-			if err := v.Decode(&manifest); err != nil {
-				return nil, fmt.Errorf("failed to decode manifest for %s: %w", label, err)
+			if err := v.Decode(&genInput); err != nil {
+				return nil, fmt.Errorf("failed to decode generator config for %s: %w", label, err)
 			}
 
-			manifest.InstanceDir = inst.Dir
-
-			manifests = append(manifests, manifest)
+			genInput.InstanceDir = inst.Dir
+			genInputs = append(genInputs, genInput)
 		}
 	}
-	return manifests, nil
+	return genInputs, nil
 }

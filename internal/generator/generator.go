@@ -16,8 +16,8 @@ var (
 	generators = map[schema.GroupVersionKind]InitGenerator{}
 )
 
-// InitGenerator is a function to initialize a generator from its manifest.
-type InitGenerator = func(manifest Manifest) (Generator, error)
+// InitGenerator is a function to initialize a generator from its input/spec.
+type InitGenerator = func(input GeneratorInput) (Generator, error)
 
 // All generators must implement this interface.
 type Generator interface {
@@ -38,12 +38,12 @@ type Options struct {
 	CacheDir string
 }
 
-// Manifest represents the manifest that contains the generator's configuration.
-type Manifest struct {
+// GeneratorInput is the input to a generator.
+type GeneratorInput struct {
 	metav1.TypeMeta `json:",inline"`
 	Spec            cue.Value
 
-	// InstanceDir is the directory that the manifest was loaded from.
+	// InstanceDir is the directory that the config was loaded from.
 	InstanceDir string
 }
 
@@ -58,11 +58,11 @@ func Register(gvk schema.GroupVersionKind, g InitGenerator) {
 }
 
 // GetGenerator returns the generator for a specific GVK.
-func GetGenerator(manifest Manifest) (Generator, error) {
-	gvk := manifest.GroupVersionKind()
+func GetGenerator(input GeneratorInput) (Generator, error) {
+	gvk := input.GroupVersionKind()
 	initFunc, ok := generators[gvk]
 	if !ok {
 		return nil, fmt.Errorf("generator for %v not found", gvk)
 	}
-	return initFunc(manifest)
+	return initFunc(input)
 }

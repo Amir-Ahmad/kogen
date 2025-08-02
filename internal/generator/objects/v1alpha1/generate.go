@@ -41,8 +41,8 @@ func (o Object) Output(w io.Writer) error {
 	return err
 }
 
-func NewGenerator(manifest generator.Manifest) (generator.Generator, error) {
-	objects := manifest.Spec.LookupPath(cue.MakePath(cue.Str("objects")))
+func NewGenerator(input generator.GeneratorInput) (generator.Generator, error) {
+	objects := input.Spec.LookupPath(cue.MakePath(cue.Str("objects")))
 	if err := objects.Err(); err != nil {
 		return nil, fmt.Errorf("failed to lookup objects: %w", err)
 	}

@@ -25,15 +25,15 @@ type Generator struct {
 // Compile time check to ensure Generator implements generator.Generator.
 var _ generator.Generator = (*Generator)(nil)
 
-func NewGenerator(manifest generator.Manifest) (generator.Generator, error) {
+func NewGenerator(input generator.GeneratorInput) (generator.Generator, error) {
 	var spec v1alpha1.CogSpec
-	if err := manifest.Spec.Decode(&spec); err != nil {
+	if err := input.Spec.Decode(&spec); err != nil {
 		return nil, fmt.Errorf("when decoding cog spec: %w", err)
 	}
 
 	return &Generator{
 		spec:        spec,
-		instanceDir: manifest.InstanceDir,
+		instanceDir: input.InstanceDir,
 	}, nil
 }
 
