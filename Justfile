@@ -6,7 +6,7 @@
     gotestsum --hide-summary=skipped -f testname ./... -- -count=1
 
 @coverage:
-    gotestsum -- -cover -coverprofile=c.out -count=1 ./...
+    RUN_REMOTE=0 gotestsum -- -cover -coverprofile=c.out -count=1 -coverpkg=./... ./...
     go tool cover -html=c.out
 
 @test-all:
