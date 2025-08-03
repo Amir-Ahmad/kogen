@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/amir-ahmad/kogen/api/v1alpha1"
@@ -37,6 +38,10 @@ func NewGenerator(input generator.GeneratorInput) (generator.Generator, error) {
 	}, nil
 }
 
+func isZero[T any](v T) bool {
+	return reflect.ValueOf(v).IsZero()
+}
+
 // Generate implements generator.Generator.
 func (g *Generator) Generate(options generator.Options) (iter.Seq2[generator.Object, error], error) {
 	st := store.NewObjectStore()
@@ -55,6 +60,15 @@ func (g *Generator) Generate(options generator.Options) (iter.Seq2[generator.Obj
 			filepath.Join(options.CacheDir, "helm"),
 			g.instanceDir,
 		); err != nil {
+			return nil, err
+		}
+	}
+
+	var err error
+	// Replace store with kustomize.
+	if !isZero(g.spec.Kustomize) {
+		st, err = processStoreWithKustomize(st, g.spec.Kustomize)
+		if err != nil {
 			return nil, err
 		}
 	}

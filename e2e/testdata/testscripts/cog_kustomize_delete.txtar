@@ -1,0 +1,63 @@
+exec kogen build kogen.cue
+cmp stdout golden.yaml
+
+-- kogen.cue --
+package kube
+
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind:       "Cog"
+	spec: resource: ["service.yaml", "configmap.yaml"]
+	spec: kustomize: patches: [{
+		target: kind: "Service"
+		patch: """
+			$patch: delete
+			kind: noop
+			metadata:
+			  name: "noop"
+			"""
+	}]
+}
+
+-- service.yaml --
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  labels:
+    app: nginx
+spec:
+  selector:
+    app: nginx
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
+
+-- configmap.yaml --
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+  nginx.conf: |
+    server {
+        listen 80;
+        location / {
+            return 200 'Hello World!';
+        }
+    }
+
+-- golden.yaml --
+apiVersion: v1
+data:
+  nginx.conf: |
+    server {
+        listen 80;
+        location / {
+            return 200 'Hello World!';
+        }
+    }
+kind: ConfigMap
+metadata:
+  name: nginx-config

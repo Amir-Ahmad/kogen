@@ -1,0 +1,55 @@
+exec kogen build kogen.cue
+cmp stdout golden.yaml
+
+-- kogen.cue --
+package kube
+
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind: "Cog"
+	spec: resource: ["service.yaml", "serviceaccount.yaml"]
+	spec: kustomize: namespace: "production"
+}
+
+-- service.yaml --
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  labels:
+    app: nginx
+spec:
+  selector:
+    app: nginx
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
+
+-- serviceaccount.yaml --
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nginx-sa
+
+-- golden.yaml --
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nginx-sa
+  namespace: production
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nginx
+  name: nginx-service
+  namespace: production
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: nginx
+  type: ClusterIP

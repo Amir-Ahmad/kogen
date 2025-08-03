@@ -1,0 +1,68 @@
+exec kogen build kogen.cue
+cmp stdout golden.yaml
+
+-- kogen.cue --
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind: "Cog"
+	spec: resource: ["deployment.yaml"]
+	spec: kustomize: patches: [{
+		target: {
+			group: "apps"
+			version: "v1"
+			kind: "Deployment"
+			name: "nginx-deployment"
+		}
+		patch: """
+		[
+		  {"op": "replace", "path": "/spec/replicas", "value": 1}
+		]
+		"""
+	}]
+}
+
+-- deployment.yaml --
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
+-- golden.yaml --
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx
+  name: nginx-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - image: nginx:1.14.2
+        name: nginx
+        ports:
+        - containerPort: 80
