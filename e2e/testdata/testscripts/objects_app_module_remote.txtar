@@ -1,6 +1,21 @@
+
 [!remote] skip
 
-# test kogen with my app module - https://github.com/Amir-Ahmad/cue-k8s-modules/tree/main/app
+# test kogen with my app module - https://github.com/Amir-Ahmad/cue-k8s-modules/tree/main/app.
+
+# Set up cue modules and cache directory, we don't want to share the cache with the host system.
+env CUE_CACHE_DIR=$WORK/cache
+exec mkdir $WORK/cache
+env CUE_REGISTRY='github.com/amir-ahmad=ghcr.io'
+
+! exists $WORK/cache/mod/extract/github.com/amir-ahmad/cue-k8s-modules
+
+exec kogen build ./...
+cmp stdout golden.yaml
+
+exists $WORK/cache/mod/extract/github.com/amir-ahmad/cue-k8s-modules
+
+# It should work with the cache there.
 exec kogen build ./...
 cmp stdout golden.yaml
 

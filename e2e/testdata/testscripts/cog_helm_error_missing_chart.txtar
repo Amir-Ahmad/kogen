@@ -1,0 +1,17 @@
+! exec kogen build kogen.cue
+stderr 'no such file or directory'
+
+-- kogen.cue --
+package kube
+
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind:       "Cog"
+
+	spec: helm: [{
+		releaseName: "missing"
+		repository:  "nonexistent/"
+		chartName:   "missing"
+		version:     "0.1.0"
+    }]
+}

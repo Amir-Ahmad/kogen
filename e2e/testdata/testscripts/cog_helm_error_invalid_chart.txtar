@@ -1,0 +1,21 @@
+! exec kogen build kogen.cue
+stderr 'loading chart'
+
+-- kogen.cue --
+package kube
+
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind:       "Cog"
+
+	spec: helm: [{
+		releaseName: "invalid"
+		repository:  "chart/"
+		chartName:   "invalid"
+		version:     "0.1.0"
+    }]
+}
+
+-- chart/Chart.yaml --
+invalid yaml content
+name: invalid

@@ -1,0 +1,31 @@
+! exec kogen build kogen.cue
+stderr 'error parsing kubeVersion'
+
+-- kogen.cue --
+package kube
+
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind:       "Cog"
+
+	spec: helm: [{
+		releaseName: "hello"
+		repository:  "chart/"
+		chartName:   "hello"
+		version:     "0.1.0"
+    }]
+	spec: helmOptions: kubeVersion: "invalid.version.format"
+}
+
+-- chart/Chart.yaml --
+apiVersion: v2
+name: hello
+version: 0.1.0
+
+-- chart/templates/configmap.yaml --
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hello-config
+data:
+  hello: world

@@ -1,0 +1,67 @@
+exec kogen build kogen.cue
+cmp stdout golden.yaml
+
+-- kogen.cue --
+package kube
+
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind:       "Cog"
+
+	spec: helm: [{
+		releaseName: "parent"
+		repository:  "chart/"
+		chartName:   "parent"
+		version:     "0.1.0"
+		values: {
+			subchart: enabled: true
+		}
+    }]
+}
+
+-- chart/Chart.yaml --
+apiVersion: v2
+name: parent
+version: 0.1.0
+dependencies:
+- name: subchart
+  version: 0.1.0
+  repository: file://./charts/subchart
+
+-- chart/charts/subchart/Chart.yaml --
+apiVersion: v2
+name: subchart
+version: 0.1.0
+
+-- chart/charts/subchart/templates/configmap.yaml --
+{{- if .Values.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: subchart-config
+data:
+  from: subchart
+{{- end }}
+
+-- chart/templates/configmap.yaml --
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: parent-config
+data:
+  hello: world
+
+-- golden.yaml --
+apiVersion: v1
+data:
+  hello: world
+kind: ConfigMap
+metadata:
+  name: parent-config
+---
+apiVersion: v1
+data:
+  from: subchart
+kind: ConfigMap
+metadata:
+  name: subchart-config

@@ -1,0 +1,30 @@
+! exec kogen build kogen.cue
+stderr 'rendering helm templates'
+
+-- kogen.cue --
+package kube
+
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind:       "Cog"
+
+	spec: helm: [{
+		releaseName: "render-fail"
+		repository:  "chart/"
+		chartName:   "render-fail"
+		version:     "0.1.0"
+    }]
+}
+
+-- chart/Chart.yaml --
+apiVersion: v2
+name: render-fail
+version: 0.1.0
+
+-- chart/templates/bad-template.yaml --
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bad-config
+data:
+  value: {{ .NonExistentValue.InvalidAccess }}
