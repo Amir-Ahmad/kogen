@@ -20,6 +20,7 @@ type BuildCmd struct {
 	Package    string   `help:"Package to load in Cue" env:"KOGEN_PACKAGE,ARGOCD_ENV_PACKAGE"`
 	CacheDir   string   `help:"Path to store downloaded artifacts such as helm charts" default:"${cache_dir}" env:"KOGEN_CACHE_DIR"`
 	KindFilter string   `short:"k" help:"Regular expression to filter objects by Kind. This is case insensitive and anchored with ^$." env:"KOGEN_KIND_FILTER,ARGOCD_ENV_KIND_FILTER"`
+	KogenField string   `help:"Top level field to find kogen components. Defaults to kogen by convention" default:"kogen" env:"KOGEN_FIELD,ARGOCD_ENV_KOGEN_FIELD"`
 }
 
 func (b *BuildCmd) Run() error {
@@ -69,7 +70,7 @@ func (b *BuildCmd) readGeneratorConfig(loadPath string) ([]generator.GeneratorIn
 			return nil, fmt.Errorf("failed to build cue instance: %w", err)
 		}
 
-		kogenValue := instanceValue.LookupPath(cue.ParsePath("kogen"))
+		kogenValue := instanceValue.LookupPath(cue.ParsePath(b.KogenField))
 		if err := kogenValue.Err(); err != nil {
 			return nil, fmt.Errorf("couldn't find generator config: %w", err)
 		}

@@ -1,0 +1,35 @@
+! exec kogen build kogen.cue
+
+exec kogen build --kogen-field "app" kogen.cue
+cmp stdout golden.yaml
+
+exec kogen build --kogen-field "app" ./...
+cmp stdout golden.yaml
+
+-- kogen.cue --
+package kube
+
+app: foobar: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: objects: [
+        {
+            apiVersion: "v1"
+            kind: "ConfigMap"
+            metadata: {
+                name: "test"
+            }
+            data: {
+                foo: "bar"
+            }
+        },
+    ]
+}
+
+-- golden.yaml --
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test
+data:
+  foo: bar
