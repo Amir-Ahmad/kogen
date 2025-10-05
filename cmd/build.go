@@ -92,6 +92,10 @@ func (b *BuildCmd) readGeneratorConfig(loadPath string) ([]generator.GeneratorIn
 			return nil, fmt.Errorf("couldn't find generator config: %w", err)
 		}
 
+		if err := kogenValue.Validate(cue.Concrete(true)); err != nil {
+			return nil, fmt.Errorf("when validating generator config: %w", err)
+		}
+
 		iter, err := kogenValue.Fields()
 		if err != nil {
 			return nil, fmt.Errorf("failed to iterate generator config: %w", err)
