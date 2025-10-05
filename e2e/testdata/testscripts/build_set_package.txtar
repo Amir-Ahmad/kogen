@@ -1,0 +1,43 @@
+# Test that kogen successfully builds in a multi-package scenario.
+exec kogen build --package one ./...
+cmp stdout golden.yaml
+
+-- one.cue --
+package one
+
+kogen: main: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: objects: [
+        {
+            apiVersion: "v1"
+            kind: "ConfigMap"
+            metadata: name: "config-one"
+            data: foo: "bar1"
+        },
+    ]
+}
+
+-- two.cue --
+package two
+
+kogen: main: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: objects: [
+        {
+            apiVersion: "v1"
+            kind: "ConfigMap"
+            metadata: name: "config-two"
+            data: foo: "bar2"
+        },
+    ]
+}
+
+-- golden.yaml --
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-one
+data:
+  foo: bar1

@@ -1,0 +1,11 @@
+! exec kogen build kogen.cue
+stderr 'failed to lookup objects'
+
+-- kogen.cue --
+package kube
+
+kogen: test: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: foo: "bar"
+}

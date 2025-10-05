@@ -1,0 +1,2 @@
+exec kogen version
+stdout 'kogen v0.0.0-dev, commit none, built at 1970-01-01T00:00:00Z'

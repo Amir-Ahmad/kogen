@@ -1,0 +1,8 @@
+! exec kogen build ./...
+stderr 'error when loading cue instance.*no package'
+
+-- kogen.cue --
+kogen: nginx: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Cog"
+}

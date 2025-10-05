@@ -1,0 +1,13 @@
+! exec kogen build kogen.cue
+stderr 'field not found: kind'
+
+-- kogen.cue --
+package kube
+
+kogen: test: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: objects: [{
+        apiVersion: "v1"
+    }]
+}

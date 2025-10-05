@@ -1,0 +1,10 @@
+! exec kogen build -k '(invalid' kogen.cue
+stderr 'failed to compile kind filter'
+
+-- kogen.cue --
+package kube
+
+kogen: foo: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Cog"
+}

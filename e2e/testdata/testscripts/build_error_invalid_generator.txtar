@@ -1,0 +1,10 @@
+! exec kogen build kogen.cue
+stderr 'generator for kogen.internal/v3, Kind=Cog not found'
+
+-- kogen.cue --
+package kube
+
+kogen: foo: {
+    apiVersion: "kogen.internal/v3"
+    kind: "Cog"
+}

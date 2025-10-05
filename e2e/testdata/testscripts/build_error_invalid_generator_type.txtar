@@ -1,0 +1,7 @@
+! exec kogen build kogen.cue
+stderr 'failed to decode generator config'
+
+-- kogen.cue --
+package kube
+
+kogen: foo: "bar"

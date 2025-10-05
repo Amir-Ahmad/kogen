@@ -1,0 +1,38 @@
+! exec kogen build kogen.cue
+stderr 'when running kustomize'
+
+-- kogen.cue --
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind: "Cog"
+	spec: resource: ["deployment.yaml"]
+	spec: kustomize: patches: [{
+		patch: """
+			apiVersion: apps/v1
+			kind: Deployment
+			metadata:
+			  name: nginx-deployment
+			  # This creates invalid output that can't be parsed back
+			  annotations: {{{invalid}}}
+			"""
+	}]
+}
+
+-- deployment.yaml --
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2

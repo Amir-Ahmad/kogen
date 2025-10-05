@@ -1,0 +1,4 @@
+env XDG_CACHE_HOME=''
+env HOME=''
+! exec kogen build ./...
+stderr 'failed to get cache directory'

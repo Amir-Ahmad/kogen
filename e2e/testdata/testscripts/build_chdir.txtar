@@ -1,0 +1,27 @@
+exec kogen build -c foo kogen.cue
+cmp stdout golden.yaml
+
+-- foo/kogen.cue --
+package kube
+
+kogen: nginx: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Cog"
+    spec: resource: ["config.yaml"]
+}
+
+-- foo/config.yaml --
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+data:
+  foo: bar
+
+-- golden.yaml --
+apiVersion: v1
+data:
+  foo: bar
+kind: ConfigMap
+metadata:
+  name: config

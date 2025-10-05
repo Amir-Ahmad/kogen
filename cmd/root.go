@@ -26,7 +26,7 @@ func Execute() {
 	cli := Cli{}
 	cacheDir, err := getCacheDir()
 	if err != nil {
-		fmt.Printf("failed to get cache directory: %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to get cache directory: %v\n", err)
 		os.Exit(1)
 	}
 	ctx := kong.Parse(&cli, kong.Vars{

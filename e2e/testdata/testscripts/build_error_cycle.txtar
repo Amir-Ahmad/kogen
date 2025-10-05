@@ -1,0 +1,7 @@
+! exec kogen build kogen.cue
+stderr 'failed to build cue instance.*cycle'
+
+-- kogen.cue --
+kogen: nginx: {
+    kind: kogen.nginx
+}

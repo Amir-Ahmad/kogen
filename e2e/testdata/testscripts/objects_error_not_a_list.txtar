@@ -1,0 +1,16 @@
+! exec kogen build kogen.cue
+stderr 'failed to iterate objects'
+
+-- kogen.cue --
+package kube
+
+kogen: test: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: {
+        // objects should be a list, not a struct
+        objects: {
+            foo: "bar"
+        }
+    }
+}

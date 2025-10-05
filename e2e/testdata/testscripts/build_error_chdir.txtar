@@ -1,0 +1,2 @@
+! exec kogen build -c nonexistent kogen.cue
+stderr 'chdir nonexistent: no such file or directory'
