@@ -1,0 +1,53 @@
+# Test SOPS structured JSON injection
+env SOPS_AGE_KEY='AGE-SECRET-KEY-1V9ES5TS93UMLDT9QF2MGPG5K6AVVY7CERD9RMMX4L4Y2WMADVXAQV8JLX3'
+
+exec kogen build ./...
+cmp stdout golden.yaml
+
+-- config.sops.json --
+{
+	"database": "ENC[AES256_GCM,data:hrt8lGmjlsI=,iv:mMU95Yl3mgy7ZkddV8N44En2oikTpqiymlLUP89VC2w=,tag:s2AhhqfYI/mmHyxBqPHWUA==,type:str]",
+	"apiKey": "ENC[AES256_GCM,data:9aZJBCGTvyiUQ3jQgmLDbw==,iv:BMQK3uAAvwxVrRAJHFGqOkxuP1knzre7imtGN5afUPU=,tag:1CAz22OlsxGPEVOPsmbd0A==,type:str]",
+	"sops": {
+		"age": [
+			{
+				"recipient": "age1uurkx954mg2d3y5tmgduytg28fdlwhynmhp6ph8e5kw7j3mz7e8q45mefs",
+				"enc": "-----BEGIN AGE ENCRYPTED FILE-----\nYWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBxL0RtMmFKVmN5T0tLWWMx\nbFh6NE5EVExwRm5QTFdxS2xkbXJVeWtBV1JRCmt5M2pOWjdIM1RoV0c1MElKaEtK\nZjB5RlU2UXNkcFJaVjJNNlh0OU5sckkKLS0tIEphTWlkMnpZV0FlNFJzUXlqb2dW\nbjEzeFJuMm5KdEVZYlg0Ni96b3hrNkUKMN8MaMvW/oD32W0swU6dj5LiKccKiV53\nolkc30S/XZTpTogi5XWXCeJn1MhexbgjuxYiEzXfIxR1kmZlV3i9NQ==\n-----END AGE ENCRYPTED FILE-----\n"
+			}
+		],
+		"lastmodified": "2025-10-05T02:11:06Z",
+		"mac": "ENC[AES256_GCM,data:tSWLEulJTBwFpq+2k65mPHnnj5WouX8dnCxYITSySUuMo9gfXWNQ2kw0R2lbgT/Qoy4Tzo5djuK2DBfXQgKayU81ra9JjLyQl5LIQneuVxUqa1VlhpKDpqeoSx8G1PtjAAWw/z0yVK0kMY8fHWK5bTXZdmYUQ5X2gaHWzp2iOyE=,iv:8FTfOzsWS+W7WZmDHOck/Z6yh3CHViE3fTEf521TPaM=,tag:Q1DPxxn4PS08gS1cJDpyJQ==,type:str]",
+		"unencrypted_suffix": "_unencrypted",
+		"version": "3.10.2"
+	}
+}
+
+-- kogen.cue --
+package kube
+
+secrets: _ @sops(config.sops.json)
+
+kogen: foobar: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: objects: [
+        {
+            apiVersion: "v1"
+            kind: "Secret"
+            metadata: name: "config"
+            stringData: {
+                database: secrets.database
+                apiKey: secrets.apiKey
+            }
+        },
+    ]
+}
+
+-- golden.yaml --
+apiVersion: v1
+kind: Secret
+metadata:
+  name: config
+stringData:
+  database: postgres
+  apiKey: secret-key-12345

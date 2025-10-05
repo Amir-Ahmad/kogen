@@ -1,0 +1,54 @@
+# Test explicit text mode injection with type=text parameter on YAML file
+env SOPS_AGE_KEY='AGE-SECRET-KEY-1V9ES5TS93UMLDT9QF2MGPG5K6AVVY7CERD9RMMX4L4Y2WMADVXAQV8JLX3'
+
+exec kogen build ./...
+cmp stdout golden.yaml
+
+-- credentials.sops.yaml --
+username: ENC[AES256_GCM,data:VodY,iv:SwLp7tJrd6yDj8GkEuev1iGaLiBc80XaSPOzRNm39dQ=,tag:7hDNeS9yg0nMweC9DSVFsg==,type:str]
+password: ENC[AES256_GCM,data:V+D2UNAIygM0fLqHhoXJowc98rk8QJwR3kIvWYqoEww=,iv:tGeku2j7G2E03hk7e76YeqVhoTuI9LXiFaSd+/tKknM=,tag:DtsVJOlu5f466Af5PHzKbQ==,type:str]
+sops:
+    age:
+        - recipient: age1uurkx954mg2d3y5tmgduytg28fdlwhynmhp6ph8e5kw7j3mz7e8q45mefs
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBjVGs4dkxselIrSEx4c21S
+            bkozYlA3YWV4WmJ6a2lBVVl1Q2xma2d3TDJvCjFnYUtLOGkzVSs0MSsyalV5a3FI
+            d1A4YUFuZGJudkMrc2FwQVpwUGhTbUEKLS0tIFRNRkpKWmFpTkIwWVNBMkhyWm9t
+            ZXhqdUp4NnJIZzNwQjdSWWZqdG5nTlkKN5Rf8a2sMBfz66esdZyAkYhDnlQFV5+z
+            T6OYSSpJEnt+l3WRcfyYrhymrYNB53B8DYs/vnyNW8U1Bt1ASbbAWg==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2025-10-05T01:33:56Z"
+    mac: ENC[AES256_GCM,data:Zr8O4ahXITQvpd9r/gbRSzx2ZFqDTuDoT9qw2c5nHyo6MqsPQzBEx4AA3hSvVAi6CIo70tJ2ax9mcMwt+VpXuD0MFhNYat8d2rRvLR2lwUJF//5soNNNJnEocbrcymlIlE9jds37KqeXjRSk9Xc1CTnkDFSr9uU8kEDx+JN5Y4A=,iv:UdVwm8dUuwraaHaaV5d3TuVagDb0ZTW1Qe+aOSkkV+Q=,tag:FYPuQFRQv4m5KC8pEuB2FQ==,type:str]
+    unencrypted_suffix: _unencrypted
+    version: 3.10.2
+
+-- kogen.cue --
+package kube
+
+secrets: {
+    credentials: string @sops(credentials.sops.yaml,type=text)
+}
+
+kogen: foobar: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: objects: [
+        {
+            apiVersion: "v1"
+            kind: "Secret"
+            metadata: name: "secret"
+            stringData: credentialsFile: secrets.credentials
+        },
+    ]
+}
+
+-- golden.yaml --
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret
+stringData:
+  credentialsFile: |
+    username: foo
+    password: u7hmbwunajdzu7mytl1xvchkhequcao9

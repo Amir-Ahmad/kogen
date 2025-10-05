@@ -37,26 +37,42 @@ func Inject(v cue.Value, sopsPath cue.Path, instanceDir string) (cue.Value, erro
 }
 
 func fillSecrets(v cue.Value, instanceDir string) (cue.Value, bool, error) {
-	if sopsFile := findSopsAttribute(v); sopsFile != "" {
-		result, err := replaceBySopsDecryption(v, instanceDir, sopsFile)
+	if config, found := findSopsAttribute(v); found {
+		result, err := replaceBySopsDecryption(v, instanceDir, config)
 		return result, true, err
 	}
 	return processFieldsRecursively(v, instanceDir)
 }
 
-func findSopsAttribute(v cue.Value) string {
-	for _, attr := range v.Attributes(cue.FieldAttr) {
-		if attr.Name() == SopsAttribute {
-			return attr.Contents()
-		}
-	}
-	return ""
+type sopsConfig struct {
+	filename string
+	textMode bool
 }
 
-func replaceBySopsDecryption(v cue.Value, instanceDir string, sopsFile string) (cue.Value, error) {
-	filePath := filepath.Join(instanceDir, sopsFile)
+func findSopsAttribute(v cue.Value) (sopsConfig, bool) {
+	for _, attr := range v.Attributes(cue.FieldAttr) {
+		if attr.Name() == SopsAttribute {
+			// First positional argument is the filename
+			filename, err := attr.String(0)
+			if err != nil {
+				// Fall back to raw contents if parsing fails
+				return sopsConfig{filename: attr.Contents()}, true
+			}
 
-	content, err := getDecryptedContent(filePath)
+			// Check for type=text parameter
+			typeVal, found, _ := attr.Lookup(1, "type")
+			textMode := found && typeVal == "text"
+
+			return sopsConfig{filename: filename, textMode: textMode}, true
+		}
+	}
+	return sopsConfig{}, false
+}
+
+func replaceBySopsDecryption(v cue.Value, instanceDir string, config sopsConfig) (cue.Value, error) {
+	filePath := filepath.Join(instanceDir, config.filename)
+
+	content, err := getDecryptedContent(filePath, config.textMode)
 	if err != nil {
 		return cue.Value{}, err
 	}
@@ -97,19 +113,31 @@ func processFieldsRecursively(v cue.Value, instanceDir string) (cue.Value, bool,
 	return result, changed, nil
 }
 
-func getDecryptedContent(file string) (any, error) {
+func getDecryptedContent(file string, textMode bool) (any, error) {
 	var format string
-	if formats.IsYAMLFile(file) {
+	isYAML := formats.IsYAMLFile(file)
+	isJSON := formats.IsJSONFile(file)
+
+	// Determine if we should use text mode
+	useTextMode := textMode || (!isYAML && !isJSON)
+
+	if isYAML {
 		format = "yaml"
-	} else if formats.IsJSONFile(file) {
+	} else if isJSON {
 		format = "json"
 	} else {
-		return nil, fmt.Errorf("sops file %q must be .yaml, .yml, or .json", file)
+		// For non-YAML/JSON files, use binary format
+		format = "binary"
 	}
 
 	decryptedBytes, err := decrypt.File(file, format)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt sops file %q: %w", file, err)
+	}
+
+	// If text mode is requested or file is not structured, return as string
+	if useTextMode {
+		return string(decryptedBytes), nil
 	}
 
 	var result any

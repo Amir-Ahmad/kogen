@@ -1,0 +1,41 @@
+# Test error case - invalid decryption (wrong key)
+env SOPS_AGE_KEY='AGE-SECRET-KEY-1WRONGKEYTHATWILLNOTDECRYPTTHEFILE1234567890ABCDEF'
+
+! exec kogen build ./...
+stderr 'failed to decrypt sops file'
+
+-- encrypted.sops.yaml --
+value: ENC[AES256_GCM,data:33IHTHeS1owhOQ==,iv:in+hXIN1bc4+PlUJccYRUjvGatl/Dnt4Ngea7XIbKgM=,tag:xZn09Znh01ILaMqdnjru4A==,type:str]
+sops:
+    age:
+        - recipient: age1uurkx954mg2d3y5tmgduytg28fdlwhynmhp6ph8e5kw7j3mz7e8q45mefs
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBJRklnMk9ad3lIemdUbStG
+            bitnZ2NVZVBOU3VGQW95UVFnUUFjaXhYZDF3CktWcFh5MmZTdGN1U0F3NVR0WUNp
+            Ym1TWkhkNlZ3VklGQm9iU0MxTE95d0kKLS0tIEFmWXdUaVo0cmNVb1hVeEsrWnRk
+            VlgzQWRzT29WdSsvN1Znc2dSVFpxRW8K5ELsa2/Wxm7eLrGF7WhP086Fk+BjE0aF
+            tD1Wvj9YZSkBfi6udGCJjs18mI/3zr2KOH5UbzA7hj+5M8uxKo2YkQ==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2025-09-16T13:45:16Z"
+    mac: ENC[AES256_GCM,data:Fl9YE8pbtwXbgf8ZO/DINhlymkPfSrs5QstHFlrWXKkFDpU7LK4o+mbnrwjGYUq9JEhQ+xiYZV/3p8sN4QYn8nAefqeJoE5icyLfH4saYdmU+/YWB992fkDmypJu9q7wmqK8DW07j5Yd1Mxv6OekKblzdc4S0o9Ouanb+qqzOxI=,iv:fUQLmQPPrQaESTxlywOkGiXQQQd6Q9mHZQAftawxbEU=,tag:2J0oYj1dTZGQelsj8pkVBw==,type:str]
+    unencrypted_suffix: _unencrypted
+    version: 3.10.1
+
+-- kogen.cue --
+package kube
+
+secrets: data: _ @sops(encrypted.sops.yaml)
+
+kogen: test: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: objects: [
+        {
+            apiVersion: "v1"
+            kind: "Secret"
+            metadata: name: "test"
+            stringData: key: secrets.data.value
+        },
+    ]
+}

@@ -1,0 +1,83 @@
+# Test nested field injection with multiple levels
+env SOPS_AGE_KEY='AGE-SECRET-KEY-1V9ES5TS93UMLDT9QF2MGPG5K6AVVY7CERD9RMMX4L4Y2WMADVXAQV8JLX3'
+
+exec kogen build ./...
+cmp stdout golden.yaml
+
+-- db.sops.yaml --
+host: ENC[AES256_GCM,data:nN5Nw0lJzC1ZMPdoNzHSrLQ=,iv:IE/b4Z5l3QDC6sThVPGxYAyHx2YCR4EmHBi6U0O6/+o=,tag:LMKoKVObfYbGP7YHEBi4jQ==,type:str]
+port: ENC[AES256_GCM,data:GeacfA==,iv:eeLEnzlVNqPpjP3jNGSTfIwu56tOLHVNHk2AOG/ID5w=,tag:2LmWc46BfD12swJQpQOF1g==,type:int]
+sops:
+    age:
+        - recipient: age1uurkx954mg2d3y5tmgduytg28fdlwhynmhp6ph8e5kw7j3mz7e8q45mefs
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBrVGpHVnlyVDNONHRpREh0
+            NnkvL3F2NmNsTy8xZkNIUDZUZ1pBZHE5dWpnCllxTWwxWVExd0Q1YXk4UGk5M2ph
+            Z1RnbklieXRYOXVqM3dpSFdHQmYrMDAKLS0tIGQyMFpmdFVkMGx5NHE4cExiWmkw
+            WEVMaGNSYVNpL09uOUR2RDZTdy95djQKPLHoHlibjxQ7Xn56hYpyypTPIj8EeCZ8
+            VX2ILK9tRHdTVwOjCSZcV5EhlG4HDyGu4cvkV5rH+G9ycE7g5dsNRQ==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2025-10-05T02:28:32Z"
+    mac: ENC[AES256_GCM,data:2qyrFtVi3Q6AEBMEGvs7SNu5w3R2TxZyMC/OaXNLiNyDNdNrjZv/bP+JeVbGJvAWO/9Bych9OeJvktVxBnLSAprtM1ZQWPUc2kfxQIU/vCrFOW57HR6XzKywqJjrH99bR1AYwJQ4EP3ZaQesLcg+GdWK2cTD9QJhnbyDwAXksZY=,iv:j8hKE6tNK8Ixwa+1R4P+9Z1NQjzmuXmcso3zqNleKvM=,tag:Fo6IO4IN/eYOvUP6haZgTQ==,type:str]
+    unencrypted_suffix: _unencrypted
+    version: 3.10.2
+
+-- api.sops.yaml --
+key: ENC[AES256_GCM,data:LFyRFqgOPC5hvldgYOU=,iv:LYX9kH591HPvmsOJtDwBuM0qDboOD1x0KNeXpNl/xn0=,tag:gi8HTIzojz2UZfwl9v3TgQ==,type:str]
+sops:
+    age:
+        - recipient: age1uurkx954mg2d3y5tmgduytg28fdlwhynmhp6ph8e5kw7j3mz7e8q45mefs
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBNTGFoaHFPVldPQ3NVVXpE
+            ZEozdllwT29XTThXRlhEcGFCZ0xiNE95dVhFCjQxNm1Fb3hUUkZHVThvVERLRmxy
+            RHR0U1FYQldjNkN0ZFVSVWgyZlowNE0KLS0tIHFYaEhyMU5Jcithalh2V1FSRmhi
+            S08yOTlHTnAxVTlaMlBldUJac2g5SzAKdrgYgZHKfQdTa9/61vJu98wxXCMb22g0
+            EsN4v77dP5kpT91+kkylHs48jVGEBur+0odo4Lsxs/i82lE5SMqXeA==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2025-10-05T02:29:25Z"
+    mac: ENC[AES256_GCM,data:x1c64A6e8SxZkuE/hPn5NoefSJ+QRcnrZCyvUu9hZPoMaRv3WHemhR/fMlNVyTVGOFHkPXpJjStNs2EUg1Tw4+7L0jEqJ0YJwyKxXtvUmeXfQXFIJ2Xtgci/b5HoTtFRnKqUQ3A4NHBYrYgBJYDmIbTWEZCY+HguReT3OPMnNMI=,iv:JKuIHov6oDdsJ6O0jUfXs4djwmakTv9ZdNNu0b7Rvtk=,tag:nvZB/J0abkliCelA9DZidA==,type:str]
+    unencrypted_suffix: _unencrypted
+    version: 3.10.2
+
+-- kogen.cue --
+package kube
+
+secrets: {
+	database: {
+		connection: _ @sops(db.sops.yaml)
+	}
+	external: {
+		api: {
+			credentials: _ @sops(api.sops.yaml)
+		}
+	}
+}
+
+kogen: config: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: objects: [
+        {
+            apiVersion: "v1"
+            kind: "Secret"
+            metadata: name: "config"
+            stringData: {
+                "database.host": secrets.database.connection.host
+                "database.port": "\(secrets.database.connection.port)"
+                "api.key": secrets.external.api.credentials.key
+            }
+        },
+    ]
+}
+
+-- golden.yaml --
+apiVersion: v1
+kind: Secret
+metadata:
+  name: config
+stringData:
+  database.host: postgres.internal
+  database.port: "5432"
+  api.key: sk_live_abc123

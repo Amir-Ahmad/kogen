@@ -1,0 +1,50 @@
+# Test custom --sops-field flag
+env SOPS_AGE_KEY='AGE-SECRET-KEY-1V9ES5TS93UMLDT9QF2MGPG5K6AVVY7CERD9RMMX4L4Y2WMADVXAQV8JLX3'
+
+exec kogen build --sops-field=encrypted ./...
+cmp stdout golden.yaml
+
+-- token.sops.yaml --
+apiToken: ENC[AES256_GCM,data:s1RLJj4Y9Rx5app+QQ==,iv:Iom253g9rIcLCSRcsqOL1kggZrD2ETPXuI0V/NST9mo=,tag:vXgX02ft55jCzm/lLvyM4g==,type:str]
+sops:
+    age:
+        - recipient: age1uurkx954mg2d3y5tmgduytg28fdlwhynmhp6ph8e5kw7j3mz7e8q45mefs
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBxQUpoaXBMMHRkc2pVL2JR
+            bzFMOFBPMWViRHROZms5YjNlZkdOSE9TUEVZCkNGbXp4MWIrVVN1bDBzLzhoeEJt
+            TmdkeldSWnZKUFY0Mi9KZFk3ejZnTUEKLS0tIDZRck1FNUZUNzdIV1ptVmlzY3Bn
+            TGhHeFZKdHp0Ujh2RVNRdmdKcmVObmMKZyE6vYebbe4HJ6oxGi0eg0HAx6srpeee
+            Im64ewdOuh+CkHmhWNIyfhzQkGn9jrNICGKnmZrzg9id6s3Xl4d0GA==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2025-10-05T02:30:18Z"
+    mac: ENC[AES256_GCM,data:/uw9rGa6h3vxL8ZzYBl4KVX/9YTIFjLhi30rrzF03gC/7tpVPNDZWwJRXqjvkQ3PHJKzjMHMV78BZ2bkmxlcxxsBjQIn4SAdXwIV7sZGCOFA7FEGEIN5aTXpzZTsYL6WT1zjZ4Hb7UKvFTSimpDkEUODIbjfm5nEDlBR+KRBBgM=,iv:xXxVEGF47FoZVRncnldYw46+Xpm94H4M+tPwVrZYfKU=,tag:iy0cu1Id2o1deiIwATB9IQ==,type:str]
+    unencrypted_suffix: _unencrypted
+    version: 3.10.2
+
+-- kogen.cue --
+package kube
+
+// Using 'encrypted' instead of default 'secrets' field
+encrypted: token: _ @sops(token.sops.yaml)
+
+kogen: apikey: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: objects: [
+        {
+            apiVersion: "v1"
+            kind: "Secret"
+            metadata: name: "api-credentials"
+            stringData: token: encrypted.token.apiToken
+        },
+    ]
+}
+
+-- golden.yaml --
+apiVersion: v1
+kind: Secret
+metadata:
+  name: api-credentials
+stringData:
+  token: abcdef_123456

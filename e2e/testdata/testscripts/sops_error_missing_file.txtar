@@ -1,0 +1,23 @@
+# Test error case - missing SOPS file
+env SOPS_AGE_KEY='AGE-SECRET-KEY-1V9ES5TS93UMLDT9QF2MGPG5K6AVVY7CERD9RMMX4L4Y2WMADVXAQV8JLX3'
+
+! exec kogen build ./...
+stderr 'no such file or directory'
+
+-- kogen.cue --
+package kube
+
+secrets: config: _ @sops(missing.sops.yaml)
+
+kogen: test: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: objects: [
+        {
+            apiVersion: "v1"
+            kind: "Secret"
+            metadata: name: "test"
+            stringData: key: secrets.config.value
+        },
+    ]
+}

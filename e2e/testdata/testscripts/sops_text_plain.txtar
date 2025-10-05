@@ -1,0 +1,51 @@
+# Test plain text file (non-YAML/JSON) injection - auto-detected as text mode
+env SOPS_AGE_KEY='AGE-SECRET-KEY-1V9ES5TS93UMLDT9QF2MGPG5K6AVVY7CERD9RMMX4L4Y2WMADVXAQV8JLX3'
+
+exec kogen build ./...
+cmp stdout golden.yaml
+
+-- private.key --
+{
+	"data": "ENC[AES256_GCM,data:SbZqEW5ls0yZyqoClw6OvZanD7UB+Tnyi8OBhF/Vv01Yj5YLKEzP83WfmgYmYWqoF7VBRRnPbjO9UYie/pNE3dolAAYPO3JWTAx4cQ==,iv:9iKig8nKYux30E6eixLz3zgxaWtonMAzW1mvrGWbFTc=,tag:arnExjywJzsfys6HOPXYrQ==,type:str]",
+	"sops": {
+		"age": [
+			{
+				"recipient": "age1uurkx954mg2d3y5tmgduytg28fdlwhynmhp6ph8e5kw7j3mz7e8q45mefs",
+				"enc": "-----BEGIN AGE ENCRYPTED FILE-----\nYWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBmanNDYmk1RlVZdGM1UUtC\nczJKS0I5MjRGdzc5b1d4dldZNDNYL3NLNTFFCjY1M2ViMlVzTFBTS3NHT3BIR252\ndmRCZzM1ZS8yZHdJNG11RGNUazk5U3cKLS0tIE5uUlpRZnNhbEl0MVg3Q2Uwa2J1\nYTZDMXJZdHp4eTZYQUJLMEdWUnRpNmMKKSkfjp2IkFUEsv2v7BTlER8fJwabkwvl\nO1K0Ygm3ouadYGe7vXuuYoWKOBtlW7gACxoErkoegmfW9S67X5Cl9A==\n-----END AGE ENCRYPTED FILE-----\n"
+			}
+		],
+		"lastmodified": "2025-10-05T02:26:28Z",
+		"mac": "ENC[AES256_GCM,data:UndUlYSr1TNfmwJO5HtuxVHvFDIaZJDSZLx0WX/1hCjWve4srStRMNhGuckdOD5vzRL7gulU0Uxq+r1yUNoS7sjb/u3TDi5YtW3+/UplwgsNknx0WhKc0vTBLHwOmrCbtejbCEZi23uep4AMO7JeITS9ozVzUCrZ8uhPpHxzptc=,iv:prCYzMkcl5MvojxighyhzH8Ras5nyWMShRYWfejt91E=,tag:CgmEPOe7rBkYc8Z5vLF67g==,type:str]",
+		"unencrypted_suffix": "_unencrypted",
+		"version": "3.10.2"
+	}
+}
+
+-- kogen.cue --
+package kube
+
+secrets: {
+	privateKey: string @sops(private.key)
+}
+
+kogen: sshkey: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: objects: [
+        {
+            apiVersion: "v1"
+            kind: "Secret"
+            metadata: name: "ssh-key"
+            stringData: key: secrets.privateKey
+        },
+    ]
+}
+
+-- golden.yaml --
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ssh-key
+stringData:
+  key: |
+    ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMySuperSecretPrivateKeyContent12345xyz
