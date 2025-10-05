@@ -1,13 +1,13 @@
 [!remote] skip
 
 env KOGEN_CACHE_DIR=$WORK/cache
-! exists $WORK/cache/resources/5971672a58edc98e.yaml
+! exists $WORK/cache/resources/a40cbb1a68216175.yaml
 
 exec kogen build kogen.cue
 cmp stdout golden.yaml
 
 # It should be cached now.
-exists $WORK/cache/resources/5971672a58edc98e.yaml
+exists $WORK/cache/resources/a40cbb1a68216175.yaml
 
 # It should work with the cache there
 exec kogen build kogen.cue
@@ -20,7 +20,7 @@ kogen: nginx: {
     apiVersion: "kogen.internal/v1alpha1"
     kind: "Cog"
     spec: {
-        resource: ["https://raw.githubusercontent.com/kubernetes/examples/master/guestbook/frontend-service.yaml"]
+        resource: ["https://raw.githubusercontent.com/kubernetes/examples/master/web/guestbook/frontend-service.yaml"]
     }
 }
 
