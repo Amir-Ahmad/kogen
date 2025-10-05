@@ -1,0 +1,33 @@
+# Test that kogen works when there's no sops attribute in the secrets path.
+exec kogen build ./...
+cmp stdout golden.yaml
+
+-- kogen.cue --
+package kube
+
+secrets: foo: "bar"
+
+kogen: foobar: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: objects: [
+        {
+            apiVersion: "v1"
+            kind: "ConfigMap"
+            metadata: {
+                name: "test"
+            }
+            data: {
+                foo: "bar"
+            }
+        },
+    ]
+}
+
+-- golden.yaml --
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test
+data:
+  foo: bar

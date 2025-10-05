@@ -7,6 +7,7 @@ import (
 
 	"github.com/amir-ahmad/kogen/internal/build"
 	"github.com/amir-ahmad/kogen/internal/generator"
+	"github.com/amir-ahmad/kogen/internal/sops"
 
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/cuecontext"
@@ -14,13 +15,19 @@ import (
 )
 
 type BuildCmd struct {
+	// flags with short options
 	Chdir      string   `short:"c" help:"Change directory before running" env:"KOGEN_CHDIR,ARGOCD_ENV_CHDIR"`
-	Path       string   `arg:"" name:"path" help:"Cue path to read generator config from" required:"" env:"KOGEN_PATH,ARGOCD_ENV_PATH"`
-	Tag        []string `short:"t" help:"Tags to pass to Cue" env:"KOGEN_TAG,ARGOCD_ENV_TAG"`
-	Package    string   `help:"Package to load in Cue" env:"KOGEN_PACKAGE,ARGOCD_ENV_PACKAGE"`
-	CacheDir   string   `help:"Path to store downloaded artifacts such as helm charts" default:"${cache_dir}" env:"KOGEN_CACHE_DIR"`
 	KindFilter string   `short:"k" help:"Regular expression to filter objects by Kind. This is case insensitive and anchored with ^$." env:"KOGEN_KIND_FILTER,ARGOCD_ENV_KIND_FILTER"`
-	KogenField string   `help:"Top level field to find kogen components. Defaults to kogen by convention" default:"kogen" env:"KOGEN_FIELD,ARGOCD_ENV_KOGEN_FIELD"`
+	Tag        []string `short:"t" help:"Tags to pass to Cue" env:"KOGEN_TAG,ARGOCD_ENV_TAG"`
+
+	// flags without short options
+	Package    string `help:"Package to load in Cue" env:"KOGEN_PACKAGE,ARGOCD_ENV_PACKAGE"`
+	CacheDir   string `help:"Path to store downloaded artifacts such as helm charts" default:"${cache_dir}" env:"KOGEN_CACHE_DIR,ARGOCD_ENV_KOGEN_CACHE_DIR"`
+	KogenField string `help:"Top level field to find kogen components. Defaults to kogen by convention" default:"kogen" env:"KOGEN_FIELD,ARGOCD_ENV_KOGEN_FIELD"`
+	SopsField  string `help:"Top level field to recursively find sops attribute and decode." default:"secrets" env:"KOGEN_SOPS_FIELD,ARGOCD_ENV_KOGEN_SOPS_FIELD"`
+
+	// positional args
+	Path string `arg:"" name:"path" help:"Cue path to read generator config from" required:"" env:"KOGEN_PATH,ARGOCD_ENV_KOGEN_PATH"`
 }
 
 func (b *BuildCmd) Run() error {
@@ -68,6 +75,11 @@ func (b *BuildCmd) readGeneratorConfig(loadPath string) ([]generator.GeneratorIn
 		instanceValue := ctx.BuildInstance(inst)
 		if err := instanceValue.Err(); err != nil {
 			return nil, fmt.Errorf("failed to build cue instance: %w", err)
+		}
+
+		instanceValue, err := sops.Inject(instanceValue, cue.ParsePath(b.SopsField), inst.Dir)
+		if err != nil {
+			return nil, err
 		}
 
 		kogenValue := instanceValue.LookupPath(cue.ParsePath(b.KogenField))
