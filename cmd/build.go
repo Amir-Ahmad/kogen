@@ -16,15 +16,15 @@ import (
 
 type BuildCmd struct {
 	// flags with short options
-	Chdir      string   `short:"c" help:"Change directory before running" env:"KOGEN_CHDIR,ARGOCD_ENV_CHDIR"`
+	Chdir      string   `short:"c" help:"Change directory before running"                                                              env:"KOGEN_CHDIR,ARGOCD_ENV_CHDIR"`
 	KindFilter string   `short:"k" help:"Regular expression to filter objects by Kind. This is case insensitive and anchored with ^$." env:"KOGEN_KIND_FILTER,ARGOCD_ENV_KIND_FILTER"`
-	Tag        []string `short:"t" help:"Tags to pass to Cue" env:"KOGEN_TAG,ARGOCD_ENV_TAG"`
+	Tag        []string `short:"t" help:"Tags to pass to Cue"                                                                          env:"KOGEN_TAG,ARGOCD_ENV_TAG"`
 
 	// flags without short options
-	Package    string `help:"Package to load in Cue" env:"KOGEN_PACKAGE,ARGOCD_ENV_PACKAGE"`
-	CacheDir   string `help:"Path to store downloaded artifacts such as helm charts" default:"${cache_dir}" env:"KOGEN_CACHE_DIR,ARGOCD_ENV_KOGEN_CACHE_DIR"`
-	KogenField string `help:"Top level field to find kogen components. Defaults to kogen by convention" default:"kogen" env:"KOGEN_FIELD,ARGOCD_ENV_KOGEN_FIELD"`
-	SopsField  string `help:"Top level field to recursively find sops attribute and decode." default:"secrets" env:"KOGEN_SOPS_FIELD,ARGOCD_ENV_KOGEN_SOPS_FIELD"`
+	Package    string `help:"Package to load in Cue"                                                    env:"KOGEN_PACKAGE,ARGOCD_ENV_PACKAGE"`
+	CacheDir   string `help:"Path to store downloaded artifacts such as helm charts"                    env:"KOGEN_CACHE_DIR,ARGOCD_ENV_KOGEN_CACHE_DIR"   default:"${cache_dir}"`
+	KogenField string `help:"Top level field to find kogen components. Defaults to kogen by convention" env:"KOGEN_FIELD,ARGOCD_ENV_KOGEN_FIELD"           default:"kogen"`
+	SopsField  string `help:"Top level field to recursively find sops attribute and decode."            env:"KOGEN_SOPS_FIELD,ARGOCD_ENV_KOGEN_SOPS_FIELD" default:"secrets"`
 
 	// positional args
 	Path string `arg:"" name:"path" help:"Cue path to read generator config from" required:"" env:"KOGEN_PATH,ARGOCD_ENV_KOGEN_PATH"`
@@ -77,7 +77,12 @@ func (b *BuildCmd) readGeneratorConfig(loadPath string) ([]generator.GeneratorIn
 			return nil, fmt.Errorf("failed to build cue instance: %w", err)
 		}
 
-		instanceValue, err := sops.Inject(instanceValue, cue.ParsePath(b.SopsField), inst.Dir)
+		instanceValue, err := sops.Inject(
+			instanceValue,
+			cue.ParsePath(b.SopsField),
+			inst.Dir,
+			inst.Root,
+		)
 		if err != nil {
 			return nil, err
 		}

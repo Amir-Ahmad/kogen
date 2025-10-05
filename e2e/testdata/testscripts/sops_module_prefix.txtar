@@ -1,0 +1,56 @@
+# Test module:// prefix for loading secrets from module root
+env SOPS_AGE_KEY='AGE-SECRET-KEY-1V9ES5TS93UMLDT9QF2MGPG5K6AVVY7CERD9RMMX4L4Y2WMADVXAQV8JLX3'
+
+exec kogen build ./apps/foo
+cmp stdout golden.yaml
+
+-- cue.mod/module.cue --
+module: "test.example/app@v0"
+language: version: "v0.13.0"
+
+-- shared-secrets.sops.yaml --
+api_key: ENC[AES256_GCM,data:kXFICDIvJrD0LARhLofa5SOgILp+N3nOL15NWShajuc=,iv:HJCYmmZYC3uNH6zkWMsAjUfgRJ1LLnzH0TdPYx4G5D0=,tag:CdQeTB5kyO8JYx/u4iBZVA==,type:str]
+sops:
+    age:
+        - recipient: age1uurkx954mg2d3y5tmgduytg28fdlwhynmhp6ph8e5kw7j3mz7e8q45mefs
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBOQTdORHUrTDJuS1FRbXV3
+            U0x6WmZSOTd1K0FoZnBPcWhTUHNSMUYxYWtZCmVJbnRUNmtOUTNnNFoxWmZWdkhB
+            ZWl1a2s3aWVlWHRZWFV5c1ZkbGUyaWcKLS0tIDRwekZRS21qU2t6TTRyTHFjUGww
+            YkxXd1NIL0RFdlIzWHU3d0xnZGl6SXcKlAPhVc3KbdSoNwobmThuX7YYimljKi6j
+            w8Wu7vu+2sc47l+Kn+94/2p28NfRuq/ifIqr2T7JhCkk2JqvUBzbGw==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2025-10-05T02:52:23Z"
+    mac: ENC[AES256_GCM,data:ZFUP1ngy4EHQVd6QxSc4K9GGnkRX/w1UaUHSh/1PpQCWyPwo6Fq+06pjZN8yaq9y/NauFNfwbCCKZ9XFpPjq3hxgrnN0WLHwbDfx8RjC2zWSTycM6ic5yY7jqayonAktaCvRqY8uQh2myJS32+bazKwN428QKUjufxrB8nR4JlI=,iv:gIZzD1JoRyoRiAMH1NG9vzFiMizXkVUIui+j2XOMqFs=,tag:33I1zx0msFT1nbaVa7gxCw==,type:str]
+    unencrypted_suffix: _unencrypted
+    version: 3.10.2
+
+-- apps/foo/kogen.cue --
+package kube
+
+// Load secrets from module root using module:// prefix
+secrets: _ @sops("module://shared-secrets.sops.yaml")
+
+kogen: foobar: {
+    apiVersion: "kogen.internal/v1alpha1"
+    kind: "Objects"
+    spec: objects: [
+        {
+            apiVersion: "v1"
+            kind: "Secret"
+            metadata: name: "app-secret"
+            stringData: {
+                api_key: secrets.api_key
+            }
+        },
+    ]
+}
+
+-- golden.yaml --
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+stringData:
+  api_key: vffptmbwc36x4qmbji51gwsma2elyvdg

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"cuelang.org/go/cue"
 	"github.com/getsops/sops/v3/cmd/sops/formats"
@@ -13,15 +14,16 @@ import (
 
 const (
 	SopsAttribute = "sops"
+	ModulePrefix  = "module://"
 )
 
-func Inject(v cue.Value, sopsPath cue.Path, instanceDir string) (cue.Value, error) {
+func Inject(v cue.Value, sopsPath cue.Path, instanceDir, moduleRoot string) (cue.Value, error) {
 	secretsValue := v.LookupPath(sopsPath)
 	if !secretsValue.Exists() {
 		return v, nil
 	}
 
-	filledSecrets, changed, err := fillSecrets(secretsValue, instanceDir)
+	filledSecrets, changed, err := fillSecrets(secretsValue, instanceDir, moduleRoot)
 	if err != nil {
 		return cue.Value{}, fmt.Errorf("failed to process @sops attributes: %w", err)
 	}
@@ -29,19 +31,22 @@ func Inject(v cue.Value, sopsPath cue.Path, instanceDir string) (cue.Value, erro
 	if changed {
 		v = v.FillPath(sopsPath, filledSecrets)
 		if err := v.Err(); err != nil {
-			return cue.Value{}, fmt.Errorf("failed to inject decrypted secrets into cue value: %w", err)
+			return cue.Value{}, fmt.Errorf(
+				"failed to inject decrypted secrets into cue value: %w",
+				err,
+			)
 		}
 	}
 
 	return v, nil
 }
 
-func fillSecrets(v cue.Value, instanceDir string) (cue.Value, bool, error) {
+func fillSecrets(v cue.Value, instanceDir, moduleRoot string) (cue.Value, bool, error) {
 	if config, found := findSopsAttribute(v); found {
-		result, err := replaceBySopsDecryption(v, instanceDir, config)
+		result, err := replaceBySopsDecryption(v, instanceDir, moduleRoot, config)
 		return result, true, err
 	}
-	return processFieldsRecursively(v, instanceDir)
+	return processFieldsRecursively(v, instanceDir, moduleRoot)
 }
 
 type sopsConfig struct {
@@ -69,8 +74,25 @@ func findSopsAttribute(v cue.Value) (sopsConfig, bool) {
 	return sopsConfig{}, false
 }
 
-func replaceBySopsDecryption(v cue.Value, instanceDir string, config sopsConfig) (cue.Value, error) {
-	filePath := filepath.Join(instanceDir, config.filename)
+// parseFilePath resolves a file path, handling the module:// prefix.
+// If the path starts with module://, it's resolved relative to moduleRoot.
+// Otherwise, it's resolved relative to instanceDir.
+func parseFilePath(filename, instanceDir, moduleRoot string) string {
+	if strings.HasPrefix(filename, ModulePrefix) {
+		// Strip the module:// prefix and resolve relative to module root
+		relativePath := strings.TrimPrefix(filename, ModulePrefix)
+		return filepath.Join(moduleRoot, relativePath)
+	}
+	// Default: resolve relative to instance directory
+	return filepath.Join(instanceDir, filename)
+}
+
+func replaceBySopsDecryption(
+	v cue.Value,
+	instanceDir, moduleRoot string,
+	config sopsConfig,
+) (cue.Value, error) {
+	filePath := parseFilePath(config.filename, instanceDir, moduleRoot)
 
 	content, err := getDecryptedContent(filePath, config.textMode)
 	if err != nil {
@@ -79,12 +101,19 @@ func replaceBySopsDecryption(v cue.Value, instanceDir string, config sopsConfig)
 
 	contentValue := v.Context().Encode(content)
 	if err := contentValue.Err(); err != nil {
-		return cue.Value{}, fmt.Errorf("failed to encode decrypted content from %q as cue value: %w", filePath, err)
+		return cue.Value{}, fmt.Errorf(
+			"failed to encode decrypted content from %q as cue value: %w",
+			filePath,
+			err,
+		)
 	}
 	return contentValue, nil
 }
 
-func processFieldsRecursively(v cue.Value, instanceDir string) (cue.Value, bool, error) {
+func processFieldsRecursively(
+	v cue.Value,
+	instanceDir, moduleRoot string,
+) (cue.Value, bool, error) {
 	fields, err := v.Fields(cue.Optional(true), cue.Hidden(true), cue.Definitions(true))
 	if err != nil {
 		return cue.Value{}, false, fmt.Errorf("failed to iterate cue fields: %w", err)
@@ -96,7 +125,7 @@ func processFieldsRecursively(v cue.Value, instanceDir string) (cue.Value, bool,
 		selector := fields.Selector()
 		fieldValue := fields.Value()
 
-		processedValue, fieldChanged, err := fillSecrets(fieldValue, instanceDir)
+		processedValue, fieldChanged, err := fillSecrets(fieldValue, instanceDir, moduleRoot)
 		if err != nil {
 			return cue.Value{}, false, fmt.Errorf("in field %s: %w", selector, err)
 		}
@@ -104,7 +133,11 @@ func processFieldsRecursively(v cue.Value, instanceDir string) (cue.Value, bool,
 		if fieldChanged {
 			result = result.FillPath(cue.MakePath(selector), processedValue)
 			if err := result.Err(); err != nil {
-				return cue.Value{}, false, fmt.Errorf("failed to inject secrets into field %s: %w", selector, err)
+				return cue.Value{}, false, fmt.Errorf(
+					"failed to inject secrets into field %s: %w",
+					selector,
+					err,
+				)
 			}
 			changed = true
 		}
