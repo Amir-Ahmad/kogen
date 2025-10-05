@@ -1,7 +1,10 @@
 ## Examples
 
-`simple-helm`: A simple app with a helm chart.
-- Generate with `kogen build simple-helm/cog.cue`.
+### [simple-helm](./simple-helm)
+A minimal example showing how to deploy a Helm chart with custom values using the `Cog` kind.
 
-`multiple-apps`: A cue module with multiple apps.
-- Generate with `kogen build -c multiple-apps ./...` or `kogen build ./...` from the directory.
+### [multiple-apps](./multiple-apps)
+A cue monorepo with multiple applications that uses my [App](https://github.com/Amir-Ahmad/cue-k8s-modules/tree/main/app) module.
+
+### [sops-secrets](./sops-secrets)
+Demonstrates using SOPS-encrypted files to inject secrets into Kubernetes manifests securely.
