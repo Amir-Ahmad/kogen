@@ -28,7 +28,7 @@ jobs:
 
       - name: Run Go tests
         shell: bash
-        run: go test -v ./...
+        run: go test -count=1 ./...
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
