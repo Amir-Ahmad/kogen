@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+
+project_name: kogen
+
+version: 2
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    binary: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    no_unique_dist_dir: true
+    ldflags:
+      - -s -w -X github.com/amir-ahmad/kogen/cmd.version={{.Version}} -X github.com/amir-ahmad/kogen/cmd.commit={{.ShortCommit}} -X github.com/amir-ahmad/kogen/cmd.date={{.Date}}
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+dockers_v2:
+  - images:
+      - "ghcr.io/amir-ahmad/kogen"
+    tags:
+      - "v{{ .Version }}"
+    dockerfile: "argo-plugin/Dockerfile"
+    extra_files:
+      - "argo-plugin/plugin.yaml"
+    labels:
+      "org.opencontainers.image.description": "Kogen is a kubernetes manifest generator."
+      "org.opencontainers.image.created": "{{.Date}}"
+      "org.opencontainers.image.name": "{{.ProjectName}}"
+      "org.opencontainers.image.revision": "{{.FullCommit}}"
+      "org.opencontainers.image.version": "{{.Version}}"
+      "org.opencontainers.image.source": "{{.GitURL}}"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
