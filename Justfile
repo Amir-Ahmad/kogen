@@ -15,10 +15,10 @@
 @test-all:
     RUN_REMOTE=0 gotestsum -f testname ./... -- -count=1
 
-# Build binary for amd64 linux
-@build-linux:
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/kogen main.go
+# Build binary
+@build:
+    goreleaser build --snapshot --clean --single-target
 
-# Build docker image for argo plugin
-@docker-build:
-    docker build -t ghcr.io/amir-ahmad/kogen:scratch -f argo-plugin/Dockerfile .
+# Build binary and docker images
+build-all:
+    goreleaser release --snapshot --clean --skip=archive

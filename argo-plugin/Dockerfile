@@ -1,5 +1,8 @@
 FROM gcr.io/distroless/base:nonroot
 
+ARG TARGETARCH
+ARG TARGETPLATFORM
+
 ENV HELM_CACHE_HOME=/tmp/helm-cache
 ENV KOGEN_CACHE_DIR=/tmp/kogen-cache
 
@@ -8,6 +11,6 @@ USER 999
 
 COPY argo-plugin/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
 
-COPY dist/kogen /kogen
+COPY "${TARGETPLATFORM}/kogen_linux_${TARGETARCH}" /kogen
 
 ENTRYPOINT ["/kogen"]
