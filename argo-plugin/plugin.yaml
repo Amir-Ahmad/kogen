@@ -1,0 +1,9 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ConfigManagementPlugin
+metadata:
+  name: kogen
+spec:
+  generate:
+    command:
+      - /kogen
+      - build

@@ -1,0 +1,4 @@
+# Ignore everything except plugin and dist
+*
+!dist/
+!argo-plugin/plugin.yaml
