@@ -3,6 +3,7 @@ FROM gcr.io/distroless/base:nonroot
 ARG TARGETARCH
 ARG TARGETPLATFORM
 
+ENV CUE_CACHE_DIR=/tmp/cue-cache
 ENV HELM_CACHE_HOME=/tmp/helm-cache
 ENV KOGEN_CACHE_DIR=/tmp/kogen-cache
 
