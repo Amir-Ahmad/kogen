@@ -31,17 +31,18 @@ func Run(w io.Writer, genInputs []generator.GeneratorInput, opts BuildOptions) e
 		CacheDir: opts.CacheDir,
 	}
 
+	printSeparator := false
 	for _, genInput := range genInputs {
 		gen, err := generator.GetGenerator(genInput)
 		if err != nil {
 			return err
 		}
+
 		it, err := gen.Generate(genOptions)
 		if err != nil {
 			return err
 		}
 
-		printSeparator := false
 		for object, err := range it {
 			if err != nil {
 				return err
