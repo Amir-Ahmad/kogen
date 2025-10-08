@@ -47,7 +47,7 @@ type HelmChart struct {
 	// equivalent of helm template --include-crds.
 	IncludeCRDs bool `json:"includeCRDs,omitempty"`
 
-	// This will create the namespace if it does not exist.
+	// This will output a namespace resource. Must be used in conjunction with Namespace.
 	CreateNamespace bool `json:"createNamespace,omitempty"`
 }
 
