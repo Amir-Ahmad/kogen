@@ -15,6 +15,7 @@ import (
 	"github.com/amir-ahmad/kogen/internal/generator"
 	"github.com/amir-ahmad/kogen/internal/generator/cog/store"
 	"github.com/amir-ahmad/kogen/internal/helm"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // Generator implements generator.Generator.
@@ -95,6 +96,22 @@ func addHelmObjects(
 		chartDir, err = chart.DownloadChart(cacheDir)
 		if err != nil {
 			return fmt.Errorf("when downloading chart: %w", err)
+		}
+	}
+
+	// Create namespace if requested
+	if helmChart.CreateNamespace && helmChart.Namespace != "" {
+		namespace := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "v1",
+				"kind":       "Namespace",
+				"metadata": map[string]interface{}{
+					"name": helmChart.Namespace,
+				},
+			},
+		}
+		if err := st.Add(&store.Object{Unstructured: namespace}); err != nil {
+			return fmt.Errorf("when adding namespace object to store: %w", err)
 		}
 	}
 

@@ -1,0 +1,45 @@
+exec kogen build kogen.cue
+cmp stdout golden.yaml
+
+-- kogen.cue --
+package kube
+
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind:       "Cog"
+
+	spec: helm: [{
+		releaseName: "hello"
+		repository:  "chart/"
+		chartName:   "hello"
+		version:     "0.1.0"
+		namespace:   "hello"
+		createNamespace: true
+	}]
+}
+
+-- chart/Chart.yaml --
+apiVersion: v2
+name: hello
+version: 0.1.0
+
+-- chart/templates/configmap.yaml --
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hello-config
+data:
+  hello: world
+
+-- golden.yaml --
+apiVersion: v1
+data:
+  hello: world
+kind: ConfigMap
+metadata:
+  name: hello-config
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hello

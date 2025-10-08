@@ -14,27 +14,41 @@ type CogSpec struct {
 	// A resource references a yaml file containing kubernetes manifests.
 	// Each resource can be a file, directory, or a URL.
 	Resource []string `json:"resource,omitempty"`
+
 	// Helm charts to render
 	Helm []HelmChart `json:"helm,omitempty"`
 
 	// Options specific to helm charts.
 	HelmOptions HelmOptions `json:"helmOptions,omitempty"`
 
-	// Specify any kustomization patches or transformers
+	// Specify any kustomization patches or transformers.
 	Kustomize kustomize_types.Kustomization `json:"kustomize,omitempty"`
 }
 
 type HelmChart struct {
-	// Helm release name
+	// Helm release name.
 	ReleaseName string `json:"releaseName,omitempty"`
-	Repository  string `json:"repository,omitempty"`
-	ChartName   string `json:"chartName,omitempty"`
-	Namespace   string `json:"namespace,omitempty"`
+
+	// Helm chart repository URL. In the case of OCI, it should start with oci://
+	Repository string `json:"repository,omitempty"`
+
+	// Helm chart name.
+	ChartName string `json:"chartName,omitempty"`
+
+	// Kubernetes namespace to install the chart into.
+	Namespace string `json:"namespace,omitempty"`
+
 	// Chart version
-	Version string                 `json:"version,omitempty"`
-	Values  map[string]interface{} `json:"values,omitempty"`
-	// equivalent of helm template --include-crds
+	Version string `json:"version,omitempty"`
+
+	// Values to provide to the chart when rendering.
+	Values map[string]interface{} `json:"values,omitempty"`
+
+	// equivalent of helm template --include-crds.
 	IncludeCRDs bool `json:"includeCRDs,omitempty"`
+
+	// This will create the namespace if it does not exist.
+	CreateNamespace bool `json:"createNamespace,omitempty"`
 }
 
 type HelmOptions struct {
