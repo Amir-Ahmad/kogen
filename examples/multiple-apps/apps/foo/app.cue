@@ -5,7 +5,9 @@ app: foo: {
 
 	controller: foo: {
 		type: "Deployment"
-		pod: image: "foo:latest"
-		pod: ports: http: port: 8080
+		container: main: {
+			image: "foo:latest"
+			port: http: port: 8080
+		}
 	}
 }

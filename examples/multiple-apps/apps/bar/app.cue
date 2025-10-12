@@ -5,7 +5,9 @@ app: bar: {
 
 	controller: bar: {
 		type: "StatefulSet"
-		pod: image: "bar:latest"
-		pod: ports: http: port: 8080
+		container: main: {
+			image: "bar:latest"
+			port: http: port: 8080
+		}
 	}
 }

@@ -25,11 +25,11 @@ language: version: "v0.13.0"
 source: kind: "git"
 deps: {
 	"github.com/amir-ahmad/cue-k8s-modules/app@v0": {
-		v:       "v0.1.2"
+		v:       "v0.3.1"
 		default: true
 	}
 	"github.com/amir-ahmad/cue-k8s-modules/k8s-schema@v0": {
-		v:       "v0.1.0"
+		v:       "v0.2.0"
 		default: true
 	}
 }
@@ -73,8 +73,8 @@ app: foo: {
 
 	controller: foo: {
 		type: "Deployment"
-		pod: image: "foo:latest"
-		pod: ports: http: port: 8080
+		container: foo: image: "foo:latest"
+		container: foo: port: http: port: 8080
 	}
 }
 
@@ -86,11 +86,10 @@ app: bar: {
 
 	controller: bar: {
 		type: "StatefulSet"
-		pod: image: "bar:latest"
-		pod: ports: http: port: 8090
+		container: bar: image: "bar:latest"
+		container: bar: port: http: port: 8090
 	}
 }
-
 
 -- golden.yaml --
 apiVersion: apps/v1
@@ -112,7 +111,6 @@ spec:
       labels:
         app.kubernetes.io/name: bar
         app.kubernetes.io/component: bar
-      annotations: {}
     spec:
       containers:
         - name: bar
@@ -143,6 +141,7 @@ spec:
     app.kubernetes.io/name: bar
     app.kubernetes.io/component: bar
   type: ClusterIP
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -162,7 +161,6 @@ spec:
       labels:
         app.kubernetes.io/name: foo
         app.kubernetes.io/component: foo
-      annotations: {}
     spec:
       containers:
         - name: foo
