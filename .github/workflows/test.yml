@@ -15,14 +15,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
+      - uses: jdx/mise-action@v3
         with:
-          go-version: "1.25"
+          version: v2025.10.8
+          install: true
+          cache: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run Go tests
-        shell: bash
-        run: go test -count=1 ./...
+      - run: mise test
 
   build:
     runs-on: ubuntu-latest
@@ -32,14 +32,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
+      - uses: jdx/mise-action@v3
         with:
-          go-version: "1.25"
+          version: v2025.10.8
+          install: true
+          cache: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run GoReleaser build
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          distribution: goreleaser
-          version: '~> v2'
-          args: build --snapshot --clean --single-target
+      - run: mise build
