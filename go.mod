@@ -1,6 +1,6 @@
 module github.com/amir-ahmad/kogen
 
-go 1.24.4
+go 1.25.2
 
 require (
 	cuelang.org/go v0.14.1
