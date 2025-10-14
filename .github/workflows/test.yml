@@ -15,14 +15,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Install go with action instead of mise due to the caching it provides
       - name: Set up Go
         uses: actions/setup-go@v6
-        with:
-          go-version: "1.25"
 
-      - name: Run Go tests
-        shell: bash
-        run: go test -count=1 ./...
+      - uses: jdx/mise-action@v3
+        with:
+          version: v2025.10.8
+          install: true
+          install_args: "gotestsum"
+          cache: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run tests
+        run: mise test-all
 
   build:
     runs-on: ubuntu-latest
@@ -32,14 +38,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Install go with action instead of mise due to the caching it provides
       - name: Set up Go
         uses: actions/setup-go@v6
-        with:
-          go-version: "1.25"
 
-      - name: Run GoReleaser build
-        uses: goreleaser/goreleaser-action@v6
+      - uses: jdx/mise-action@v3
         with:
-          distribution: goreleaser
-          version: '~> v2'
-          args: build --snapshot --clean --single-target
+          version: v2025.10.8
+          install: true
+          install_args: "goreleaser"
+          cache: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build with goreleaser
+        run: mise build
