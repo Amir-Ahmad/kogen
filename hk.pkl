@@ -1,0 +1,31 @@
+amends "package://github.com/jdx/hk/releases/download/v1.18.3/hk@1.18.3#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v1.18.3/hk@1.18.3#/Builtins.pkl"
+
+fail_fast = false
+
+local linters = new Mapping<String, Step> {
+    ["trailing-whitespace"] = Builtins.trailing_whitespace
+    ["end-of-file-fixer"] = Builtins.newlines
+    ["mixed-line-ending"] = Builtins.mixed_line_ending
+    ["check-added-large-files"] = Builtins.check_added_large_files
+    // Uncomment after fix is merged https://github.com/jdx/hk/pull/365
+    // ["go-fumpt"] = Builtins.go_fumpt
+    ["golangci-lint"] = Builtins.golangci_lint
+}
+
+hooks {
+    ["pre-commit"] {
+        fix = true
+        stash = "git"
+        steps = linters
+    }
+
+    ["check"] {
+        steps = linters
+    }
+
+    ["fix"] {
+        fix = true
+        steps = linters
+    }
+}
