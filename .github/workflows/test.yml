@@ -15,10 +15,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Use go action instead of mise due to the caching it provides
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
+
       - uses: jdx/mise-action@v3
         with:
           version: v2025.10.8
           install: true
+          install_args: "gotestsum"
           cache: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -32,10 +39,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Use go action instead of mise due to the caching it provides
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
+
       - uses: jdx/mise-action@v3
         with:
           version: v2025.10.8
           install: true
+          install_args: "goreleaser"
           cache: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
