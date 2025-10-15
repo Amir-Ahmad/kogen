@@ -54,14 +54,18 @@ func (s *ObjectStore) Add(obj *Object) error {
 func (s *ObjectStore) AddYaml(yamlBytes []byte) error {
 	decoder := util_yaml.NewYAMLToJSONDecoder(bytes.NewReader(yamlBytes))
 	for {
-		var manifest unstructured.Unstructured
+		var manifest *unstructured.Unstructured
 		if err := decoder.Decode(&manifest); err != nil {
 			if err == io.EOF {
 				break
 			}
 			return err
 		}
-		if err := s.Add(&Object{&manifest}); err != nil {
+		// Sometimes helm can output nil yaml objects which we need to skip.
+		if manifest == nil {
+			continue
+		}
+		if err := s.Add(&Object{manifest}); err != nil {
 			return err
 		}
 	}

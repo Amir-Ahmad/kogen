@@ -1,0 +1,51 @@
+exec kogen build kogen.cue
+cmp stdout golden.yaml
+
+-- kogen.cue --
+package kube
+
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind:       "Cog"
+
+	spec: helm: [{
+		releaseName: "empty-templates"
+		repository:  "chart/"
+		chartName:   "empty-templates"
+		version:     "0.1.0"
+    }]
+}
+
+-- chart/Chart.yaml --
+apiVersion: v2
+name: empty-templates
+version: 0.1.0
+
+-- chart/templates/empty.yaml --
+# foo
+# bar
+
+-- chart/templates/emptyagain.yaml --
+# foo
+# bar
+# baz
+-- chart/templates/configmap.yaml --
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: empty-templates-config
+data:
+  hello: world
+
+-- chart/templates/NOTES.txt --
+Thank you for installing {{ .Chart.Name }}.
+
+Your release is named {{ .Release.Name }}.
+
+-- golden.yaml --
+apiVersion: v1
+data:
+  hello: world
+kind: ConfigMap
+metadata:
+  name: empty-templates-config
