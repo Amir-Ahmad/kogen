@@ -74,7 +74,17 @@ func (c Chart) GetChartURL(cacheDir string) (string, error) {
 			fmt.Errorf("getting chart '%s' version '%s': %w", c.Repository, c.Version, err)
 	}
 
-	return chartInfo.URLs[0], nil
+	if len(chartInfo.URLs) == 0 {
+		return "", fmt.Errorf("chart '%s' version '%s' has no downloadable URLs", c.ChartName, c.Version)
+	}
+
+	// Chart "URLs" can be relative paths we need to resolve.
+	absoluteChartURL, err := repo.ResolveReferenceURL(c.Repository, chartInfo.URLs[0])
+	if err != nil {
+		return "", fmt.Errorf("resolving chart URL: %w", err)
+	}
+
+	return absoluteChartURL, nil
 }
 
 // extractPath returns a normalised path to extract the chart to.
