@@ -2,6 +2,7 @@
 go = "1.25.2"
 "gotestsum" = "v1.13.0"
 "goreleaser" = "v2.12.5"
+"golangci-lint" = "v2.5.0"
 
 [tasks.test]
 description = "Run unit + local e2e tests"

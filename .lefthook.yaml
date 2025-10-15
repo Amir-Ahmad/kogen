@@ -1,0 +1,7 @@
+pre-commit:
+  parallel: true
+  commands:
+    golangci-lint:
+      run: golangci-lint run --new-from-rev HEAD --fix
+      glob: "*.go"
+      stage_fixed: true
