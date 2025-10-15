@@ -53,7 +53,9 @@ func NewGenerator(input generator.GeneratorInput) (generator.Generator, error) {
 }
 
 // Generate implements generator.Generator.
-func (g *Generator) Generate(options generator.Options) (iter.Seq2[generator.Object, error], error) {
+func (g *Generator) Generate(
+	options generator.Options,
+) (iter.Seq2[generator.Object, error], error) {
 	iter, err := g.objects.List()
 	if err != nil {
 		return nil, fmt.Errorf("failed to iterate objects: %w", err)

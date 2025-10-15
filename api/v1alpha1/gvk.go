@@ -9,5 +9,7 @@ var GroupVersion = schema.GroupVersion{
 	Version: "v1alpha1",
 }
 
-var CogGVK = GroupVersion.WithKind("Cog")
-var ObjectsGVK = GroupVersion.WithKind("Objects")
+var (
+	CogGVK     = GroupVersion.WithKind("Cog")
+	ObjectsGVK = GroupVersion.WithKind("Objects")
+)

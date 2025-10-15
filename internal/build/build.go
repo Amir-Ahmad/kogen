@@ -54,7 +54,7 @@ func Run(w io.Writer, genInputs []generator.GeneratorInput, opts BuildOptions) e
 
 			// The separator needs to be printed after every object but the last.
 			if printSeparator {
-				fmt.Fprintf(w, "---\n")
+				fmt.Fprintf(w, "---\n") //nolint:errcheck
 			} else {
 				printSeparator = true
 			}

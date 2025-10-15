@@ -44,7 +44,9 @@ func isZero[T any](v T) bool {
 }
 
 // Generate implements generator.Generator.
-func (g *Generator) Generate(options generator.Options) (iter.Seq2[generator.Object, error], error) {
+func (g *Generator) Generate(
+	options generator.Options,
+) (iter.Seq2[generator.Object, error], error) {
 	st := store.NewObjectStore()
 
 	for _, resource := range g.spec.Resource {
@@ -139,7 +141,12 @@ func addHelmObjects(
 }
 
 // addResourceObjects adds all objects from a resource to the store.
-func addResourceObjects(st *store.ObjectStore, resource string, instanceDir string, cacheDir string) error {
+func addResourceObjects(
+	st *store.ObjectStore,
+	resource string,
+	instanceDir string,
+	cacheDir string,
+) error {
 	var yamlData []byte
 	var err error
 
@@ -205,10 +212,14 @@ func getHTTPResource(url string, cacheDir string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("when fetching resource from URL %s: %w", url, err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch resource from URL %s: status %d", url, resp.StatusCode)
+		return nil, fmt.Errorf(
+			"failed to fetch resource from URL %s: status %d",
+			url,
+			resp.StatusCode,
+		)
 	}
 
 	data, err := io.ReadAll(resp.Body)

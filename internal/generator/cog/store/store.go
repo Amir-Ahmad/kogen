@@ -61,7 +61,9 @@ func (s *ObjectStore) AddYaml(yamlBytes []byte) error {
 			}
 			return err
 		}
-		s.Add(&Object{&manifest})
+		if err := s.Add(&Object{&manifest}); err != nil {
+			return err
+		}
 	}
 	return nil
 }
