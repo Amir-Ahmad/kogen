@@ -1,0 +1,57 @@
+# In this test we're outputting invalid yaml with a missing newline after a doc separator,
+# e.g. `---apiVersion: v1`
+# Helm template still correctly renders it so we'll do it as well.
+exec kogen build kogen.cue
+cmp stdout golden.yaml
+
+-- kogen.cue --
+package kube
+
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind:       "Cog"
+
+	spec: helm: [{
+		releaseName: "hello"
+		repository:  "chart/"
+		chartName:   "hello"
+		version:     "0.1.0"
+    }]
+}
+
+-- chart/Chart.yaml --
+apiVersion: v2
+name: test
+version: 0.1.0
+
+-- chart/values.yaml --
+first:
+  enabled: true
+second:
+  enabled: true
+
+-- chart/templates/manifests.yaml --
+{{- if .Values.first.enabled -}}
+kind: Resource
+metadata:
+  name: first
+---
+{{- end }}
+{{- if .Values.second.enabled -}}
+apiVersion: v1
+kind: Resource
+metadata:
+  name: second
+---
+{{- end -}}
+
+
+-- golden.yaml --
+apiVersion: v1
+kind: Resource
+metadata:
+  name: second
+---
+kind: Resource
+metadata:
+  name: first

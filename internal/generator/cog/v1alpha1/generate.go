@@ -132,8 +132,8 @@ func addHelmObjects(
 	}
 
 	for _, v := range renderedTemplates {
-		if err := st.AddYaml([]byte(v)); err != nil {
-			return fmt.Errorf("when adding helm objects to store: %w", err)
+		if err := st.AddYaml([]byte(v.Content)); err != nil {
+			return fmt.Errorf("when adding helm objects to store from %s: %w", v.Name, err)
 		}
 	}
 

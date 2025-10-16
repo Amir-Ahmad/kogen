@@ -7,6 +7,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
+	"helm.sh/helm/v3/pkg/releaseutil"
 )
 
 // Release represents a helm Release.
@@ -20,10 +21,10 @@ type Release struct {
 }
 
 // Template does the equivalent of a `helm template`
-func (r Release) Template(chartPath string) (map[string]string, error) {
+func (r Release) Template(chartPath string) ([]releaseutil.Manifest, error) {
 	chart, err := loader.Load(chartPath)
 	if err != nil {
-		return map[string]string{}, fmt.Errorf("loading chart: %w", err)
+		return nil, fmt.Errorf("loading chart: %w", err)
 	}
 
 	// Use the same default capabilities as helm when not specified
@@ -32,7 +33,7 @@ func (r Release) Template(chartPath string) (map[string]string, error) {
 	if r.KubeVersion != "" {
 		parsedKubeVersion, err := chartutil.ParseKubeVersion(r.KubeVersion)
 		if err != nil {
-			return map[string]string{}, fmt.Errorf("error parsing kubeVersion: %w", err)
+			return nil, fmt.Errorf("error parsing kubeVersion: %w", err)
 		}
 		capabilities.KubeVersion = *parsedKubeVersion
 	}
@@ -42,7 +43,7 @@ func (r Release) Template(chartPath string) (map[string]string, error) {
 	}
 
 	if err := chartutil.ProcessDependenciesWithMerge(chart, r.Values); err != nil {
-		return map[string]string{}, fmt.Errorf("processing chart dependencies: %w", err)
+		return nil, fmt.Errorf("processing chart dependencies: %w", err)
 	}
 
 	releaseOptions := chartutil.ReleaseOptions{
@@ -54,14 +55,14 @@ func (r Release) Template(chartPath string) (map[string]string, error) {
 	// Merge chart values with our provided ones
 	renderValues, err := chartutil.ToRenderValues(chart, r.Values, releaseOptions, capabilities)
 	if err != nil {
-		return map[string]string{}, fmt.Errorf("preparing render values: %w", err)
+		return nil, fmt.Errorf("preparing render values: %w", err)
 	}
 
 	// Run Helm template
 	engine := engine.Engine{}
 	renderedTemplates, err := engine.Render(chart, renderValues)
 	if err != nil {
-		return map[string]string{}, fmt.Errorf("rendering helm templates: %w", err)
+		return nil, fmt.Errorf("rendering helm templates: %w", err)
 	}
 
 	// Iterate through charts CRDs and add to map
@@ -83,5 +84,11 @@ func (r Release) Template(chartPath string) (map[string]string, error) {
 		}
 	}
 
-	return renderedTemplates, nil
+	// the SortManifests function splits up manifests into individual resources and does some additional error handling.
+	_, manifests, err := releaseutil.SortManifests(renderedTemplates, nil, releaseutil.InstallOrder)
+	if err != nil {
+		return nil, fmt.Errorf("error processing helm templated resources: %w", err)
+	}
+
+	return manifests, nil
 }
