@@ -1,0 +1,45 @@
+# test that helm hooks are rendered.
+exec kogen build kogen.cue
+cmp stdout golden.yaml
+
+-- kogen.cue --
+package kube
+
+kogen: main: {
+	apiVersion: "kogen.internal/v1alpha1"
+	kind:       "Cog"
+
+	spec: helm: [{
+		releaseName: "hooks"
+		repository:  "chart/"
+		chartName:   "hooks"
+		version:     "0.1.0"
+    }]
+}
+
+-- chart/Chart.yaml --
+apiVersion: v2
+name: hooks
+version: 0.1.0
+
+-- chart/templates/hook.yaml --
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hook
+  namespace: hook
+  annotations:
+    helm.sh/hook: post-install
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: "1"
+
+-- golden.yaml --
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    helm.sh/hook: post-install
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: "1"
+  name: hook
+  namespace: hook

@@ -2,6 +2,7 @@ package helm
 
 import (
 	"fmt"
+	"path"
 	"strings"
 
 	"helm.sh/helm/v3/pkg/chart/loader"
@@ -21,7 +22,7 @@ type Release struct {
 }
 
 // Template does the equivalent of a `helm template`
-func (r Release) Template(chartPath string) ([]releaseutil.Manifest, error) {
+func (r Release) Template(chartPath string) (map[string]string, error) {
 	chart, err := loader.Load(chartPath)
 	if err != nil {
 		return nil, fmt.Errorf("loading chart: %w", err)
@@ -72,23 +73,31 @@ func (r Release) Template(chartPath string) ([]releaseutil.Manifest, error) {
 		}
 	}
 
+	out := make(map[string]string)
+
 	for key, val := range renderedTemplates {
-		// Remove NOTES.txt which is sometimes in the templated output
+		// Ignore NOTES.txt which is sometimes in the templated output
 		if strings.HasSuffix(key, "NOTES.txt") {
-			delete(renderedTemplates, key)
+			continue
 		}
 
-		// Delete all empty templates
+		// Ignore all empty templates
 		if strings.TrimSpace(val) == "" {
-			delete(renderedTemplates, key)
+			continue
+		}
+
+		// "Skip partials". Taken from helm source code.
+		if strings.HasPrefix(path.Base(key), "_") {
+			continue
+		}
+
+		// Each template can have multiple resources, releaseutil safely splits them.
+		resources := releaseutil.SplitManifests(val)
+
+		for resKey, res := range resources {
+			out[fmt.Sprintf("%s-%s", key, resKey)] = res
 		}
 	}
 
-	// the SortManifests function splits up manifests into individual resources and does some additional error handling.
-	_, manifests, err := releaseutil.SortManifests(renderedTemplates, nil, releaseutil.InstallOrder)
-	if err != nil {
-		return nil, fmt.Errorf("error processing helm templated resources: %w", err)
-	}
-
-	return manifests, nil
+	return out, nil
 }
