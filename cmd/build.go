@@ -11,6 +11,7 @@ import (
 
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/cuecontext"
+	"cuelang.org/go/cue/errors"
 	"cuelang.org/go/cue/load"
 )
 
@@ -93,7 +94,7 @@ func (b *BuildCmd) readGeneratorConfig(loadPath string) ([]generator.GeneratorIn
 		}
 
 		if err := kogenValue.Validate(cue.Concrete(true)); err != nil {
-			return nil, fmt.Errorf("when validating generator config: %w", err)
+			return nil, fmt.Errorf("when validating cue: %w", formatCueError(err))
 		}
 
 		iter, err := kogenValue.Fields()
@@ -119,4 +120,15 @@ func (b *BuildCmd) readGeneratorConfig(loadPath string) ([]generator.GeneratorIn
 		}
 	}
 	return genInputs, nil
+}
+
+func formatCueError(err error) error {
+	errs := errors.Errors(err)
+
+	return errors.New(fmt.Sprintf(
+		"%v\n\n# Error details (%d):\n%v\n",
+		err,
+		len(errs),
+		errors.Details(err, nil),
+	))
 }

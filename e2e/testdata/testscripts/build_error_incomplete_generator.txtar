@@ -1,5 +1,5 @@
 ! exec kogen build kogen.cue
-stderr 'when validating generator config.*incomplete value string'
+stderr 'when validating cue:.*incomplete value string'
 
 -- kogen.cue --
 package kube
