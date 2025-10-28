@@ -18,10 +18,10 @@ type BuildCmd struct {
 	// flags with short options
 	Chdir      string   `short:"c" help:"Change directory before running"                                                              env:"KOGEN_CHDIR,ARGOCD_ENV_CHDIR"`
 	KindFilter string   `short:"k" help:"Regular expression to filter objects by Kind. This is case insensitive and anchored with ^$." env:"KOGEN_KIND_FILTER,ARGOCD_ENV_KIND_FILTER"`
+	Package    string   `short:"p" help:"Package to load in Cue"                                                                       env:"KOGEN_PACKAGE,ARGOCD_ENV_PACKAGE"`
 	Tag        []string `short:"t" help:"Tags to pass to Cue"                                                                          env:"KOGEN_TAG,ARGOCD_ENV_TAG"`
 
 	// flags without short options
-	Package    string `help:"Package to load in Cue"                                                    env:"KOGEN_PACKAGE,ARGOCD_ENV_PACKAGE"`
 	CacheDir   string `help:"Path to store downloaded artifacts such as helm charts"                    env:"KOGEN_CACHE_DIR,ARGOCD_ENV_KOGEN_CACHE_DIR"   default:"${cache_dir}"`
 	KogenField string `help:"Top level field to find kogen components. Defaults to kogen by convention" env:"KOGEN_FIELD,ARGOCD_ENV_KOGEN_FIELD"           default:"kogen"`
 	SopsField  string `help:"Top level field to recursively find sops attribute and decode."            env:"KOGEN_SOPS_FIELD,ARGOCD_ENV_KOGEN_SOPS_FIELD" default:"secrets"`
