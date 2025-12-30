@@ -75,7 +75,7 @@ func (b *BuildCmd) readGeneratorConfig(loadPath string) ([]generator.GeneratorIn
 
 		instanceValue := ctx.BuildInstance(inst)
 		if err := instanceValue.Err(); err != nil {
-			return nil, fmt.Errorf("failed to build cue instance: %w", err)
+			return nil, fmt.Errorf("failed to build cue instance: %w", formatCueError(err))
 		}
 
 		instanceValue, err := sops.Inject(
@@ -85,7 +85,7 @@ func (b *BuildCmd) readGeneratorConfig(loadPath string) ([]generator.GeneratorIn
 			inst.Root,
 		)
 		if err != nil {
-			return nil, err
+			return nil, formatCueError(err)
 		}
 
 		kogenValue := instanceValue.LookupPath(cue.ParsePath(b.KogenField))
